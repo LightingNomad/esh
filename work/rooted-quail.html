@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+  content="See Edward S. Hansen's lighting design for Alvaro Montelongo and Jessica Muszynski's production of ROOTED/QUAIL at the Diavolo Studio in Los Angeles, California.">
+  <title>Rooted/Quail - Edward S. Hansen</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <link rel="shortcut icon" type="image/x-icon" href="../assets/favicon.ico">
+  <link rel="mask-icon" href="https://lightingnomad.github.io/edward-hansen/images/favicon.ico" color="#000000">
+</head>
+
+<style>
+  .red-border {
+    border-width: 1px;
+    border-color: red;
+    border-style: solid;
+  }
+
+  .blue-border {
+    border-width: 1px;
+    border-color: blue;
+    border-style: dashed;
+  }
+
+  .img-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .img-container .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: 500ms ease-in-out;
+  }
+
+  .img-container:hover .overlay {
+    opacity: 1;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+
+  .overlay span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: black;
+    text-align: center;
+    line-height: 1;
+    width: 80%;
+  }
+
+  @media only screen and (min-width: 500px) {
+    .mobile-only {
+      display: none;
+    }
+  }
+
+  @media only screen and (max-width: 500px) {
+    .img-container:hover .overlay {
+      display: none;
+    }
+  }
+
+  .img-caption {
+    text-align: center;
+  }
+</style>
+
+<body>
+
+  <main>
+    <!-- Header -->
+    <div class="container">
+      <header>
+        <nav
+          class="navbar bg-light p-4 mt-3 border-style rounded-4 justify-content-center justify-content-sm-center justify-content-md-between">
+          <a class="navbar-brand" href="./index.html">
+            <img src="../assets/ESH-Lighting-Logo.svg" width="" height="75" class="d-inline-block align-top"
+              alt="ESH Lighting Logo">
+          </a>
+          <ul class="nav nav-pills justify-content-center">
+            <li class="nav-item"><a href="../index.html" class="nav-link">Home</a></li>
+            <li class="nav-item"><a href="../work.html" class="nav-link active" aria-current="page">Work</a></li>
+            <li class="nav-item"><a href="../about.html" class="nav-link">About</a></li>
+            <li class="nav-item"><a href="../resume.html" class="nav-link">Resume</a></li>
+            <li class="nav-item"><a href="../contact.html" class="nav-link">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
+    </div>
+
+    <!-- Show Information -->
+
+    <div class="container mt-3">
+      <div class="container background-color bg-light border-style rounded-4 p-3">
+        <h1><b>Rooted/Quail </b><small class="h4">by Alvaro Montelongo and Jessica Muszynski</small></h1>
+        <h6>Diavolo Studio</h6>
+        <div class="d-flex container mt-3">
+          <div class="row p-0">
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 my-auto">
+              <p><b>Producer:</b></p>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 my-auto">
+              <p><a href="https://kaufman.usc.edu" target="_blank" rel="noreferrer noopener">USC Glorya Kaufman School of Dance</a></p>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 my-auto">
+              <p><b>Directors:</b></p>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 my-auto">
+              <p><a href="https://kaufman.usc.edu/students/student-profile-alvaro-montelongo/" target="_blank" rel="noreferrer noopener">Alvaro Montelongo</a> & <a href="https://kaufman.usc.edu/students/student-profile-jessica-muszynski/" target="_blank" rel="noreferrer noopener">Jessica Muszynski</a></p>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 my-auto">
+              <p><b>Lighting Designer:</b></p>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 my-auto">
+              <p>Edward S. Hansen</p>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 my-auto">
+              <p><b>Technical Director:</b></p>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 my-auto">
+              <p><a href="http://jordankerrfox.com" target="_blank" rel="noreferrer noopener">Jordan Kerr Fox</a></p>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 my-auto">
+              <p><b>Costume Designer:</b></p>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 my-auto">
+              <p><a href="https://www.mgabbardesign.com" target="_blank" rel="noreferrer noopener">Mallory Gabbard</a></p>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 my-auto">
+              <p><b>Stage Manager:</b></p>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 col-xl-2 my-auto">
+              <p><a href="https://www.linkedin.com/in/chloe-willey-024b59132" target="_blank" rel="noreferrer noopener">Chloe Willey</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Carousel -->
+    <div class="container mt-3">
+      <div id="myCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-theme="light">
+        <div class="carousel-indicators">
+          <button type="button" data-bs-target="#myCarousel" data-bs-slide-to="0" class="active" aria-current="true"
+            aria-label="Slide 1"></button>
+          <button type="button" data-bs-target="#myCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+        </div>
+        <div class="carousel-inner border-style rounded-4">
+          <div class="carousel-item active">
+            <img class="img-fluid" src="../assets/work/rooted-quail/001-work-rooted-quail.jpg" alt="Rooted Quail Image 1">
+          </div>
+          <div class="carousel-item">
+            <img class="img-fluid" src="../assets/work/rooted-quail/002-work-rooted-quail.jpg" alt="Rooted Quail Image 2">
+          </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#myCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#myCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Next</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Next / Last Buttons -->
+    <div class="container mt-3 text-center">
+      <div class="row gx-3">
+        <div class="col">
+          <a href="./dogfight.html" class="btn btn-primary border-style rounded-4" style="width: 100%; height: 100%;">Previous
+            Project</a>
+        </div>
+        <div class="col">
+          <a href="./avenue-q.html" class="btn btn-primary border-style rounded-4" style="width: 100%; height: 100%;">Next
+            Project</a>
+        </div>
+      </div>
+    </div>
+    <!-- Footer -->
+    <footer class="container mt-3">
+      <div class="bg-light px-3 border-style rounded-4">
+        <p class="py-3">&copy Edward S. Hansen
+          <script>document.write(new Date().getFullYear())</script>
+        </p>
+      </div>
+    </footer>
+    </main>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+      crossorigin="anonymous"></script>
+</body>
+
+</html>

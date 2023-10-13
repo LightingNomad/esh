@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+    content="View the resume of Edward S. Hansen, a New York-based lighting designer and associate for theatre, live performance, and installation.">
+  <title>Resume - Edward S. Hansen</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
+  <link rel="mask-icon" href="https://lightingnomad.github.io/edward-hansen/images/favicon.ico" color="#000000">
+</head>
+
+<style>
+  .red-border {
+    border-width: 1px;
+    border-color: red;
+    border-style: solid;
+  }
+
+  .blue-border {
+    border-width: 1px;
+    border-color: blue;
+    border-style: dashed;
+  }
+
+  .img-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .img-container .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: 500ms ease-in-out;
+  }
+
+  .img-container:hover .overlay {
+    opacity: 1;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+
+  .overlay span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: black;
+    text-align: center;
+    line-height: 1;
+    width: 80%;
+  }
+
+  @media only screen and (min-width: 500px) {
+    .mobile-only {
+      display: none;
+    }
+  }
+
+  @media only screen and (max-width: 500px) {
+    .img-container:hover .overlay {
+      display: none;
+    }
+  }
+
+  .img-caption {
+    text-align: center;
+  }
+</style>
+
+<body>
+
+  <main>
+    <!-- Header -->
+    <div class="container">
+      <header>
+        <nav
+          class="navbar bg-light p-4 mt-3 border-style rounded-4 justify-content-center justify-content-sm-center justify-content-md-between">
+          <a class="navbar-brand" href="./index.html">
+            <img src="./assets/ESH-Lighting-Logo.svg" width="" height="75" class="d-inline-block align-top"
+              alt="ESH Lighting Logo">
+          </a>
+          <ul class="nav nav-pills justify-content-center">
+            <li class="nav-item"><a href="./index.html" class="nav-link">Home</a></li>
+            <li class="nav-item"><a href="./work.html" class="nav-link">Work</a></li>
+            <li class="nav-item"><a href="./about.html" class="nav-link">About</a></li>
+            <li class="nav-item"><a href="./resume.html" class="nav-link active" aria-current="page">Resume</a></li>
+            <li class="nav-item"><a href="./contact.html" class="nav-link">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
+    </div>
+
+    <!-- About -->
+
+    <div class="container mt-3">
+      <div class="background-color bg-light border-style rounded-4 p-3">
+        <div class="row">
+          <div class="col gr-0">
+            <span class="fs-3 fw-bold">Edward S. Hansen</span>
+          </div>
+          <div class="col text-end gl-0">
+            <span class="fs-3">Lighting Designer</span>
+          </div>
+        </div>
+        <!-- <svg height="15px" width="100%" viewbox="0 0 100 15" preserveAspectRatio="none">
+          <polygon points="0,15 100,0, 0,0" style="fill:black" />
+        </svg> -->
+      </div>
+    </div>
+
+    <div class="container mt-3">
+      <div class="background-color bg-light border-style rounded-4 px-3 pt-3 pb-2">
+
+        <h5><b>Lighting Design Experience</b></h5>
+        <table class="table table-hover table-sm table-light align-middle">
+          <thead>
+            <tr>
+              <th>Production</th>
+              <th>Date</th>
+              <th>Venue</th>
+              <th>Director</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>The Motherf**ker With The Hat</td>
+              <td>Feb. 2021</td>
+              <td>Online/Zoom</td>
+              <td>Andrei Belgrader</td>
+            </tr>
+            <tr>
+              <td>The Secret Garden</td>
+              <td>Apr. 2020</td>
+              <td>Bing Theatre</td>
+              <td>Kelly Ward</td>
+            </tr>
+            <tr>
+              <td>Dogfight</td>
+              <td>Jan. 2020</td>
+              <td>Massman Theatre</td>
+              <td>Austin Karkowsky</td>
+            </tr>
+            <tr>
+              <td>Amsterdam</td>
+              <td>Oct. 2019</td>
+              <td>Scene Dock Theatre</td>
+              <td>Lilach Dekel-Avneri</td>
+            </tr>
+            <tr>
+              <td>The 25<sup>th</sup> Annual Putnam County Spelling Bee</td>
+              <td>Sep. 2019</td>
+              <td>Massman Theatre</td>
+              <td>Tyler Joseph Ellis</td>
+            </tr>
+            <tr>
+              <td>Rooted/Quail</td>
+              <td>Mar. 2019</td>
+              <td>Diavolo Studio</td>
+              <td>Alvaro Montelongo & Jessica Muszynski</td>
+            </tr>
+            <tr>
+              <td>Two Gentlemen of Verona</td>
+              <td>Feb. 2019</td>
+              <td>Bing Theatre</td>
+              <td>Drew Barr</td>
+            </tr>
+            <tr>
+              <td>Avenue Q</td>
+              <td>Nov. 2018</td>
+              <td>Massman Theatre</td>
+              <td>Sean Soper</td>
+            </tr>
+            <tr>
+              <td>Chauvet Professional Student Lighting Showcase</td>
+              <td>May 2018</td>
+              <td>Montalban Theatre</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>Cabaret</td>
+              <td>Mar. 2018</td>
+              <td>Massman Theatre</td>
+              <td>Tyler Joseph Ellis</td>
+            </tr>
+            <tr>
+              <td>Something Ever After</td>
+              <td>Oct. 2017</td>
+              <td>Cammileri Hall</td>
+              <td>Sophie Thomason</td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+
+    <div class="container mt-3">
+      <div class="background-color bg-light border-style rounded-4 px-3 pt-3 pb-2">
+
+        <h5><b>Associate/Assistant Lighting Design Experience</b></h5>
+        <table class="table table-hover table-sm table-light align-middle">
+          <thead>
+            <tr>
+              <th>Production</th>
+              <th>Date</th>
+              <th>Venue</th>
+              <th>Designer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>The Inheritance</td>
+              <td>Sep. 2022</td>
+              <td>Geffen Playhouse</td>
+              <td>Josh Epstein</td>
+            </tr>
+            <tr>
+              <td>Warrior Queen: Anahit The Brave</td>
+              <td>Nov. 2022</td>
+              <td>Colony Theater</td>
+              <td>Josh Epstein</td>
+            </tr>
+            <tr>
+              <td>Dark Streets</td>
+              <td>Aug. 2022</td>
+              <td>Madame Tussauds NY</td>
+              <td>David Agress</td>
+            </tr>
+            <tr>
+              <td>When Playwrights Kill</td>
+              <td>Jul. 2022</td>
+              <td>Signature Theatre NY</td>
+              <td>Elizabeth Harper</td>
+            </tr>
+            <tr>
+              <td>GLOW: The Gala</td>
+              <td>May 2022</td>
+              <td>Madame Tussauds NY</td>
+              <td>David Agress</td>
+            </tr>
+            <tr>
+              <td>A Midsummer Night's Dream</td>
+              <td>Nov. 2019</td>
+              <td>Bing Theatre</td>
+              <td>David Martin Jacques</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="container mt-3">
+      <div class="background-color bg-light border-style rounded-4 px-3 pt-3 pb-2">
+
+        <h5><b>Related Skills</b></h5>
+
+        <div class="row text-center">
+          <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 my-auto">
+            <p>Vectorworks 2024</p>
+          </div>
+          <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 my-auto">
+            <p>AutoCAD 2024</p>
+          </div>
+          <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 my-auto">
+            <p>Capture 2023</p>
+          </div>
+          <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 my-auto">
+            <p>Lightwright 6</p>
+          </div>
+        </div>
+        <div class="row text-center">
+          <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 my-auto">
+            <p>ETC EOS Programming</p>
+          </div>
+          <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 my-auto">
+            <p>SketchUp Pro</p>
+          </div>
+          <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 my-auto">
+            <p>FileMaker Pro 19 Advanced</p>
+          </div>
+          <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 my-auto">
+            <p>Adobe CC Suite (2D)</p>
+          </div>
+        </div>
+        <div class="row text-center">
+          <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 my-auto">
+            <p>Moving Light Assistant</p>
+          </div>
+          <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 my-auto">
+            <p>Vor</p>
+          </div>
+          <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 my-auto">
+            <p>Lighting Networking</p>
+          </div>
+          <div class="col-6 col-sm-6 col-md-3 col-lg-3 col-xl-3 my-auto">
+            <p>Production Electrics</p>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+
+    <div class="container mt-3">
+      <div class="background-color bg-light border-style rounded-4 px-3 pt-3 pb-2">
+        <h5><b>Related Work Experience</b></h5>
+        <ul>
+          <li><b>Freelance Theatrical Designer</b> - May 2021 - Present</li>
+          <uL class="list-unstyled">
+            <li>Designer, Associate Designer, and Draftsman for theatrical and installation lighting design.</li>
+          </uL>
+          <br>
+          <li><b>Theatrical Electrician, USC School of Dramatic Arts</b> - Jan. 2018 - Mar. 2020</li>
+          <ul class="list-unstyled">
+            <li>Worked under Theatre Manager/Master Electrician to install, focus, and maintain theatrical lighting
+              designs for both student and professional designers using a variety of conventional and automated lighting
+              equipment.</li>
+          </ul>
+        </ul>
+      </div>
+    </div>
+
+    <div class="container mt-3">
+      <div class="background-color bg-light border-style rounded-4 p-3">
+        <h5><b>Academic Profile</b></h5>
+        <span>University of Southern California, B.F.A., Theatre Design, <i>Summa Cum Laude</i></span>
+      </div>
+    </div>
+
+    <div class="container mt-3">
+      <div class="background-color bg-light border-style rounded-4 p-3">
+        <h5><b>References</b></h5>
+        <div class="row text-center g-3">
+          <div class="col-12 col-sm-12 col-md-4 col-lg-4 col-xl-4">
+            <span class="fs-6 fw-bold">Ms. Elizabeth Harper</span><br>
+            <span><i>Professor & Lighting Designer</i></span>
+          </div>
+          <div class="col-12 col-sm-12 col-md-4 col-lg-4 col-xl-4">
+            <span class="fs-6 fw-bold">Mr. Josh Epstein</span><br>
+            <span><i>Professor & Lighting Designer</i></span>
+          </div>
+          <div class="col-12 col-sm-12 col-md-4 col-lg-4 col-xl-4">
+            <span class="fs-6 fw-bold">Mr. David Agress</span><br>
+            <span><i>Lighting Designer</i></span>
+          </div>
+        </div>
+        <br>
+        <div class="row text-center">
+          <div class="col-12">
+            <span><i>Contact Information Available Upon Request</i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container mt-3">
+      <a href="./assets/resume/EdwardHansen_Resume_220709_Web.pdf" target="_blank" rel="noreferrer noopener"
+        class="btn btn-primary w-100">Download Resume</a>
+    </div>
+
+    <!-- Footer -->
+    <footer class="container mt-3">
+      <div class="bg-light px-3 border-style rounded-4">
+        <p class="py-3">&copy Edward S. Hansen
+          <script>document.write(new Date().getFullYear())</script>
+        </p>
+      </div>
+    </footer>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+    crossorigin="anonymous"></script>
+</body>
+
+</html>
