@@ -83,16 +83,16 @@
       <header>
         <nav
           class="navbar bg-light p-4 mt-3 border-style rounded-4 justify-content-center justify-content-sm-center justify-content-md-between">
-          <a class="navbar-brand" href="./index.html">
+          <a class="navbar-brand" href="./index">
             <img src="./assets/ESH-Lighting-Logo.svg" width="" height="75" class="d-inline-block align-top"
               alt="ESH Lighting Logo">
           </a>
           <ul class="nav nav-pills justify-content-center">
-            <li class="nav-item"><a href="./index.html" class="nav-link">Home</a></li>
-            <li class="nav-item"><a href="./work.html" class="nav-link">Work</a></li>
-            <li class="nav-item"><a href="./about.html" class="nav-link">About</a></li>
-            <li class="nav-item"><a href="./resume.html" class="nav-link">Resume</a></li>
-            <li class="nav-item"><a href="./contact.html" class="nav-link active" aria-current="page">Contact</a></li>
+            <li class="nav-item"><a href="./index" class="nav-link">Home</a></li>
+            <li class="nav-item"><a href="./work" class="nav-link">Work</a></li>
+            <li class="nav-item"><a href="./about" class="nav-link">About</a></li>
+            <li class="nav-item"><a href="./resume" class="nav-link">Resume</a></li>
+            <li class="nav-item"><a href="./contact" class="nav-link active" aria-current="page">Contact</a></li>
           </ul>
         </nav>
       </header>
@@ -115,13 +115,13 @@
           <div class="row justify-content-md-center">
             <div class="col-12 col-sm-12 col-md-6 col-lg-3 col-xl-3 g-3">
               <div class="form-floating">
-                <input type="text" class="form-control" id="floatingInput" placeholder="First Name" required="true">
+                <input type="text" class="form-control" id="floatingInput" placeholder="First Name" required="true" name="First Name">
                 <label for="floatingInput">First Name</label>
               </div>
             </div>
             <div class="col-12 col-sm-12 col-md-6 col-lg-3 col-xl-3 g-3">
               <div class="form-floating">
-                <input type="text" class="form-control" id="floatingInput" placeholder="Last Name" required="true">
+                <input type="text" class="form-control" id="floatingInput" placeholder="Last Name" required="true" name="Last Name">
                 <label for="floatingInput">Last Name</label>
               </div>
             </div>
@@ -130,7 +130,7 @@
           <div class="row justify-content-md-center">
             <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 g-3">
               <div class="form-floating">
-                <input type="email" class="form-control" id="floatingInput" placeholder="Email Address" required="true">
+                <input type="email" class="form-control" id="floatingInput" placeholder="Email Address" required="true" name="email">
                 <label for="floatingInput">Email Address</label>
               </div>
             </div>
@@ -139,7 +139,7 @@
           <div class="row justify-content-md-center">
             <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 g-3">
               <div class="form-floating">
-                <input type="text" class="form-control" id="floatingInput" placeholder="Subject" required="true">
+                <input type="text" class="form-control" id="floatingInput" placeholder="Subject" required="true" name="_subject">
                 <label for="floatingInput">Subject</label>
               </div>
             </div>
@@ -149,7 +149,7 @@
             <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 g-3">
               <div class="form-floating">
                 <textarea type="text" class="form-control" id="floatingTextarea" placeholder="Message"
-                  style="height: 150px;" required="true"></textarea>
+                  style="height: 150px;" required="true" name="Message"></textarea>
                 <label for="floatingTextarea">Message</label>
               </div>
             </div>
@@ -160,6 +160,7 @@
               <button type="submit" class="btn btn-primary w-100">Submit</button>
             </div>
           </div>
+          <input type="hidden" name="_next" value="https://www.edwardhansen.com/contact-thanks">
         </form>
 
 
