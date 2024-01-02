@@ -42,12 +42,12 @@
             <span>Calculate which bet you need to win for the Bird Man's double your money scheme.</span>
           </div>
         </div>
-
-        <div data-toggle="validator" class="was-validated">
+        <!-- data-toggle="validator" class="was-validated" -->
+        <div>
           <div class="row justify-content-md-center">
             <div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6 g-3">
               <div class="form-floating">
-                <input type="number" class="form-control" id="initialMoney" placeholder="Initial Money" required="true"
+                <input type="text" pattern="\d*" class="form-control" id="initialMoney" placeholder="Initial Money" required="true"
                   name="initialMoney">
                 <label for="initialMoney">Initial Money</label>
               </div>
@@ -57,7 +57,7 @@
           <div class="row justify-content-md-center">
             <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 g-3">
               <div class="form-floating">
-                <input type="number" class="form-control" id="betAmount" placeholder="Initlal Bet Amount" required="true"
+                <input type="text" pattern="\d*" class="form-control" id="betAmount" placeholder="Initlal Bet Amount" required="true"
                   name="betAmount">
                 <label for="betAmount">Initial Bet Amount</label>
               </div>
