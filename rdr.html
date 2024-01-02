@@ -90,6 +90,10 @@
           <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 g-3 text-center">
             <span class="display-6" id="endMoney" name="endMoney"></span>
           </div>
+        </div>        <div class="row justify-content-md-center">
+          <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 g-3 text-center">
+            <span class="display-6" id="numRounds" name="numRounds"></span>
+          </div>
         </div>
 
 
@@ -105,11 +109,13 @@
         var initBet = document.getElementById("betAmount").value;
         var bet = initBet / 2;
         var runningTotal = 0;
+        var i = 0;
 
         while ((bet * 2) < money) {
           bet = bet * 2;
           runningTotal = runningTotal + bet;
           money = money - bet;
+          i = i + 1;
         }        
 
         var endMoney = (bet * 2) + runningTotal + money;
@@ -118,6 +124,7 @@
         document.getElementById("wonAmount").textContent = "You Will Win: $" + FormatNumberBy3(bet * 2);
         document.getElementById("lootAmount").textContent = "You Will Loot: $" + FormatNumberBy3(runningTotal);
         document.getElementById("endMoney").textContent = "Final Amount: $" + FormatNumberBy3(endMoney);
+        document.getElementById("numRounds").textContent = "Number of Rounds: " + FormatNumberBy3(i);
       }
 
     </script>
