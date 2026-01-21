@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Convert Cuelist CSV to ETC EOS Formatted CSV">
+  <title>Cuelist to EOS CSV Converter - Edward S. Hansen</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
+  <link rel="mask-icon" href="https://lightingnomad.github.io/edward-hansen/images/favicon.ico" color="#000000">
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+</head>
+
+<style>
+  .red-border {
+    border-width: 1px;
+    border-color: red;
+    border-style: solid;
+  }
+
+  .blue-border {
+    border-width: 1px;
+    border-color: blue;
+    border-style: dashed;
+  }
+
+  .img-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .img-container .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: 500ms ease-in-out;
+  }
+
+  .img-container:hover .overlay {
+    opacity: 1;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+
+  .overlay span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: black;
+    text-align: center;
+    line-height: 1;
+    width: 80%;
+  }
+
+  @media only screen and (min-width: 500px) {
+    .mobile-only {
+      display: none;
+    }
+  }
+
+  @media only screen and (max-width: 500px) {
+    .img-container:hover .overlay {
+      display: none;
+    }
+  }
+
+  .img-caption {
+    text-align: center;
+  }
+
+  .loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 2s linear infinite;
+    display: none;
+    margin: 10px auto;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
+<body>
+
+  <main>
+    <!-- Header -->
+    <div class="container">
+      <header>
+        <nav
+          class="navbar bg-light p-4 mt-3 border-style rounded-4 justify-content-center justify-content-sm-center justify-content-md-between">
+          <a class="navbar-brand" href="./">
+            <img src="./assets/ESH-Lighting-Logo.svg" width="" height="75" class="d-inline-block align-top"
+              alt="ESH Lighting Logo">
+          </a>
+          <ul class="nav nav-pills justify-content-center">
+            <li class="nav-item"><a href="./" class="nav-link">Home</a></li>
+            <li class="nav-item"><a href="./work" class="nav-link">Work</a></li>
+            <li class="nav-item"><a href="./about" class="nav-link">About</a></li>
+            <li class="nav-item"><a href="./resume" class="nav-link">Resume</a></li>
+            <li class="nav-item"><a href="./contact" class="nav-link">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
+    </div>
+
+    <!-- Cuelist CSV Converter -->
+
+    <div class="container mt-3">
+      <div class="background-color bg-light border-style rounded-4 p-3">
+
+
+        <div class="row justify-content-md-center">
+          <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6">
+            <span class="fs-3 fw-bold">Cuelist to EOS CSV Converter</span><br>
+            <span>Convert Cuelist CSV files to a CSV File Formatted for ETC EOS.</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="row justify-content-md-center">
+            <div class="col-12 col-sm-12 col-md-6 col-lg-6 col-xl-6 g-3">
+              <div class="form-floating">
+                <input type="number" class="form-control" id="defaultTime" name="defaultTime" value="2.9" step="0.1">
+                <label for="defaultTime">Default Cue Time</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row justify-content-md-center">
+            <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 g-3">
+              <div class="form-floating">
+                <input type="file" class="form-control" id="csvFile" name="csvFile" accept=".csv">
+                <label for="csvFile">Input CSV File</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row justify-content-md-center">
+            <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 g-3">
+              <button id="convertBtn" onclick="convertCSV()" disabled class="btn btn-primary w-100">Loading Python
+                Engine...</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="loader" id="loader"></div>
+
+        <div class="row justify-content-md-center">
+          <div class="col-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 g-3 text-center">
+            <span class="display-9" id="status" name="status">Initializing Python (approx. 10s)...</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      let pyodide;
+
+      async function initPyodide() {
+        try {
+          document.getElementById('status').style.display = "block";
+          pyodide = await loadPyodide();
+          await pyodide.loadPackage(["pandas", "numpy"]);
+          document.getElementById('convertBtn').disabled = false;
+          document.getElementById('convertBtn').innerText = "Convert CSV";
+          document.getElementById('status').innerText = "System Ready.";
+        } catch (e) {
+          document.getElementById('status').innerText = "Error loading Python: " + e;
+        }
+      }
+      initPyodide();
+
+      async function convertCSV() {
+        const fileInput = document.getElementById('csvFile');
+        const defaultTime = document.getElementById('defaultTime').value;
+        const status = document.getElementById('status');
+        const loader = document.getElementById('loader');
+
+        if (fileInput.files.length === 0) return alert("Please select a file first!");
+
+        status.innerText = "Processing...";
+        loader.style.display = "block";
+
+        const text = await fileInput.files[0].text();
+
+        try {
+          pyodide.globals.set("input_csv_content", text);
+          pyodide.globals.set("default_time_str", defaultTime);
+
+          const pythonCode = `
+import pandas as pd
+import numpy as np
+import io
+import re
+
+def time_math_converter(val):
+    if pd.isna(val) or str(val).lower() == 'nan' or str(val).strip() == '':
+        return np.nan
+    s = str(val).strip()
+    if ':' in s:
+        try:
+            parts = [float(p) for p in s.split(':')]
+            if len(parts) == 2: return parts[0] * 60 + parts[1]
+            if len(parts) == 3: return parts[0] * 3600 + parts[1] * 60 + parts[2]
+        except: return np.nan
+    try: return float(s)
+    except: return np.nan
+
+# 1. Load & Rename
+df = pd.read_csv(io.StringIO(input_csv_content))
+column_mapping = {
+    'Cue Number': 'TARGET_ID', 'Label': 'LABEL', 'Notes': 'CUE_NOTES', 'Time': 'TIME_DATA',
+    'Focus': 'FOCUS_TIME', 'Color': 'COLOR_TIME', 'Beam': 'BEAM_TIME', 'Mark': 'MARK',
+    'Follow/Hang': 'FOLLOW', 'Block': 'BLOCK', 'Assert': 'ASSERT', 'Link': 'LINK',
+    'Loop': 'LOOP', 'Curve': 'CURVE', 'External Links': 'EXTERNAL_LINKS',
+    'LX: Scene Header': 'SCENE_TEXT', 'LX: Scene End': 'SCENE_END'
+}
+df = df.rename(columns=column_mapping)
+
+# 2. Basic Cleanup
+text_cols = ['LABEL', 'CUE_NOTES', 'EXTERNAL_LINKS', 'FOLLOW', 'MARK', 'BLOCK', 'ASSERT', 'LINK', 'LOOP', 'CURVE']
+for col in text_cols:
+    if col in df.columns:
+        df[col] = df[col].astype(str).str.replace(r'[\\r\\n]+', ' ', regex=True).str.strip().replace('nan', np.nan)
+
+scene_cols = ['SCENE_TEXT', 'SCENE_END']
+for col in scene_cols:
+    if col in df.columns:
+        df[col] = df[col].astype(str).str.strip().replace({'-': '', 'nan': ''})
+
+# 3. Init Columns
+for col in ['UP_DELAY', 'UP_TIME_TEMP', 'DOWN_DELAY', 'DOWN_TIME', 'FOCUS_DELAY', 'COLOR_DELAY', 'BEAM_DELAY']:
+    df[col] = np.nan
+
+# 4. Pass 1: Extraction
+df['TIME_DATA_CLEAN'] = df['TIME_DATA'].astype(str).str.replace(' ', '')
+valid_chars = r"[\\d\\.\\:]+"
+slash_pat = r"^(?:\\((" + valid_chars + r")\\))?(" + valid_chars + r")\\/(?:\\((" + valid_chars + r")\\))?(" + valid_chars + r")$"
+single_pat = r"^(?:\\((" + valid_chars + r")\\))?(" + valid_chars + r")$"
+
+slash_mask = df['TIME_DATA_CLEAN'].str.contains('/', na=False)
+if slash_mask.any():
+    ext = df.loc[slash_mask, 'TIME_DATA_CLEAN'].str.extract(slash_pat)
+    df.loc[slash_mask, ['UP_DELAY', 'UP_TIME_TEMP', 'DOWN_DELAY', 'DOWN_TIME']] = ext.values
+
+single_mask = ~slash_mask & (df['TIME_DATA_CLEAN'] != 'nan') & (df['TIME_DATA_CLEAN'] != '')
+if single_mask.any():
+    ext = df.loc[single_mask, 'TIME_DATA_CLEAN'].str.extract(single_pat)
+    df.loc[single_mask, ['UP_DELAY', 'UP_TIME_TEMP']] = ext.values
+
+for prefix in ['FOCUS', 'COLOR', 'BEAM']:
+    col = f'{prefix}_TIME'
+    if col in df.columns:
+        ext = df[col].astype(str).str.replace(' ', '').str.extract(single_pat)
+        df[f'{prefix}_DELAY'], df[col] = ext[0], ext[1]
+
+# 5. Pass 2: Math Conversion
+math_cols = ['UP_DELAY', 'UP_TIME_TEMP', 'DOWN_DELAY', 'DOWN_TIME', 'FOCUS_TIME', 'FOCUS_DELAY', 'COLOR_TIME', 'COLOR_DELAY', 'BEAM_TIME', 'BEAM_DELAY']
+for col in math_cols:
+    if col in df.columns:
+        df[col] = df[col].apply(time_math_converter)
+
+# 6. Formatting & Logic Synchronization
+df['TIME_DATA'] = df['UP_TIME_TEMP']
+
+# NEW: Logical copying for empty DOWN fields
+# If DOWN_TIME and DOWN_DELAY are both null, copy from UP fields
+down_is_blank = df['DOWN_TIME'].isnull() & df['DOWN_DELAY'].isnull()
+df.loc[down_is_blank, 'DOWN_TIME'] = df.loc[down_is_blank, 'TIME_DATA']
+df.loc[down_is_blank, 'DOWN_DELAY'] = df.loc[down_is_blank, 'UP_DELAY']
+
+# Apply default if everything is still blank
+all_blank = df[['TIME_DATA', 'UP_DELAY', 'DOWN_TIME', 'DOWN_DELAY']].isnull().all(axis=1)
+df.loc[all_blank, 'TIME_DATA'] = pd.to_numeric(default_time_str, errors='coerce')
+
+# 7. Metadata & Final Order
+df['TARGET_TYPE'], df['TARGET_TYPE_AS_TEXT'], df['TARGET_LIST_NUMBER'] = 1, 'Cue', 1
+FINAL_ORDER = [
+    'TARGET_TYPE','TARGET_TYPE_AS_TEXT','TARGET_LIST_NUMBER','TARGET_ID','LABEL',
+    'TIME_DATA','UP_DELAY','DOWN_TIME','DOWN_DELAY','FOCUS_TIME','FOCUS_DELAY',
+    'COLOR_TIME','COLOR_DELAY','BEAM_TIME','BEAM_DELAY','MARK','BLOCK','ASSERT',
+    'FOLLOW','LINK','LOOP','CURVE','EXTERNAL_LINKS','CUE_NOTES','SCENE_TEXT','SCENE_END'
+]
+df = df.reindex(columns=FINAL_ORDER).fillna('')
+
+csv_buffer = io.StringIO()
+df.to_csv(csv_buffer, index=False, header=True)
+final_result = "START_TARGETS\\n" + csv_buffer.getvalue() + "END_TARGETS" + ("," * (len(FINAL_ORDER)-1))
+final_result
+            `;
+
+          const result = await pyodide.runPythonAsync(pythonCode);
+          const blob = new Blob([result], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'CUELIST_FOR_EOS.csv';
+          a.click();
+          status.innerText = "Success! File downloaded.";
+        } catch (err) {
+          status.innerText = "Error: " + err;
+        } finally {
+          loader.style.display = "none";
+        }
+      }
+    </script>
+</body>
+
+<!-- Footer -->
+<footer class="container mt-3">
+  <div class="bg-light px-3 border-style rounded-4">
+    <p class="py-3">&copy Edward S. Hansen
+      <script>document.write(new Date().getFullYear())</script>
+    </p>
+  </div>
+</footer>
+</main>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+</body>
+
+</html>
