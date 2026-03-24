@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare Cuelist CSV and ETC EOS CSV exports to find discrepancies.">
+  <title>Cuelist EOS CSV Compare - Edward S. Hansen</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
+  <link rel="mask-icon" href="https://lightingnomad.github.io/edward-hansen/images/favicon.ico" color="#000000">
+</head>
+
+<style>
+  .drop-zone {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    background: #fff;
+    cursor: pointer;
+    transition: 0.2s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .drop-zone.dragover {
+    background-color: #e9ecef;
+    border-color: #0d6efd;
+  }
+</style>
+
+<body>
+
+  <main>
+    <div class="container">
+      <header>
+        <nav
+          class="navbar bg-light p-4 mt-3 border-style rounded-4 justify-content-center justify-content-sm-center justify-content-md-between">
+          <a class="navbar-brand" href="./">
+            <img src="./assets/ESH-Lighting-Logo.svg" width="" height="75" class="d-inline-block align-top"
+              alt="ESH Lighting Logo">
+          </a>
+          <ul class="nav nav-pills justify-content-center">
+            <li class="nav-item"><a href="./" class="nav-link">Home</a></li>
+            <li class="nav-item"><a href="./work" class="nav-link">Work</a></li>
+            <li class="nav-item"><a href="./about" class="nav-link">About</a></li>
+            <li class="nav-item"><a href="./resume" class="nav-link">Resume</a></li>
+            <li class="nav-item"><a href="./contact" class="nav-link">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
+    </div>
+
+    <div class="container mt-3">
+      <div class="background-color bg-light border-style rounded-4 p-3">
+        <div class="row justify-content-md-center mb-3">
+          <div class="col-12 col-lg-8">
+            <span class="fs-3 fw-bold">Cue List / EOS Cue Compare</span><br>
+            <span>Identify missing cues between ETC EOS and Cuelist exports.</span>
+          </div>
+        </div>
+
+        <div class="row justify-content-md-center g-3">
+          <div class="col-12 col-md-4">
+            <div id="dropEos" class="drop-zone">
+              <span class="fw-bold">ETC EOS CSV</span><br>
+              <span id="infoEos" class="text-muted small">Drag file here or click</span>
+            </div>
+          </div>
+          <div class="col-12 col-md-4">
+            <div id="dropCuelist" class="drop-zone">
+              <span class="fw-bold">Cuelist CSV</span><br>
+              <span id="infoCuelist" class="text-muted small">Drag file here or click</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="row justify-content-md-center mt-3">
+          <div class="col-12 col-md-8">
+            <button onclick="runAudit()" class="btn btn-primary w-100 py-2 fw-bold">Compare</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container mt-3">
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <div class="background-color bg-light border-style rounded-4 p-3 h-100">
+            <span class="fs-4 fw-bold">Missing in EOS</span><br>
+            <div id="resEos" class="mt-3">
+              <span class="text-muted">No report generated.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <div class="background-color bg-light border-style rounded-4 p-3 h-100">
+            <span class="fs-4 fw-bold">Missing in Cuelist</span><br>
+            <div id="resCuelist" class="mt-3">
+              <span class="text-muted">No report generated.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="container mt-3">
+      <div class="bg-light px-3 border-style rounded-4">
+        <p class="py-3">&copy; Edward S. Hansen
+          <script>document.write(new Date().getFullYear())</script>
+        </p>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    let filesData = { cuelist: null, eos: null };
+
+    setupDropZone('dropEos', 'eos', 'infoEos');
+    setupDropZone('dropCuelist', 'cuelist', 'infoCuelist');
+
+    function setupDropZone(id, key, infoId) {
+      const zone = document.getElementById(id);
+      const info = document.getElementById(infoId);
+
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        handleFile(e.dataTransfer.files[0], key, info);
+      });
+      zone.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file'; input.accept = '.csv';
+        input.onchange = _ => handleFile(input.files[0], key, info);
+        input.click();
+      });
+    }
+
+    function handleFile(file, key, infoEl) {
+      if (!file) return;
+      infoEl.innerText = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => filesData[key] = e.target.result;
+      reader.readAsText(file);
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split(/\r?\n/);
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      return lines.slice(1).map(line => {
+        const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+        let obj = {};
+        headers.forEach((h, i) => obj[h] = values[i]);
+        return obj;
+      });
+    }
+
+    function runAudit() {
+      if (!filesData.cuelist || !filesData.eos) return alert("Please upload both CSV files.");
+
+      const clItems = parseCSV(filesData.cuelist);
+      const clMap = new Map();
+      clItems.forEach(r => {
+        const q = r['Cue Number'];
+        if (q) clMap.set(q, { label: r['Label'] || "Untitled", page: r['Page Number'] || "?" });
+      });
+
+      const eosLines = filesData.eos.split(/\r?\n/)
+        .filter(l => !l.includes('START_TARGETS') && !l.includes('END_TARGETS')).join('\n');
+      const eosItems = parseCSV(eosLines);
+      const eosMap = new Map();
+      eosItems.forEach(r => {
+        if (r['TARGET_TYPE_AS_TEXT'] === 'Cue' && (!r['PART_NUMBER'] || r['PART_NUMBER'] === "")) {
+          if (r['TARGET_ID']) eosMap.set(r['TARGET_ID'], { label: r['LABEL'] || "" });
+        }
+      });
+
+      const matchedCues = [...clMap.keys()]
+        .filter(id => eosMap.has(id))
+        .sort((a, b) => parseFloat(a) - parseFloat(b));
+
+      const getSmartPageInfo = (qNum) => {
+        const target = parseFloat(qNum);
+        const prevQ = matchedCues.filter(id => parseFloat(id) < target).pop();
+        const nextQ = matchedCues.find(id => parseFloat(id) > target);
+
+        const prevPage = prevQ ? clMap.get(prevQ).page : null;
+        const nextPage = nextQ ? clMap.get(nextQ).page : null;
+
+        // Strict logic: only say "Page: X" if the cues on either side match
+        if (prevPage && nextPage && prevPage === nextPage && prevPage !== "?") {
+          return `Page: ${prevPage}`;
+        } else if (prevPage && prevPage !== "?") {
+          return `Likely Page: ${prevPage}`;
+        } else if (nextPage && nextPage !== "?") {
+          return `Likely Page: ${nextPage}`;
+        }
+        return "Page: Unknown";
+      };
+
+      const missingInEos = [...clMap.keys()].filter(id => !eosMap.has(id))
+        .sort((a, b) => parseFloat(a) - parseFloat(b))
+        .map(id => ({ id, label: clMap.get(id).label, pageStr: `Page: ${clMap.get(id).page}` }));
+
+      const missingInCl = [...eosMap.keys()].filter(id => !clMap.has(id))
+        .sort((a, b) => parseFloat(a) - parseFloat(b))
+        .map(id => ({ id, label: eosMap.get(id).label, pageStr: getSmartPageInfo(id) }));
+
+      render('resEos', missingInEos);
+      render('resCuelist', missingInCl);
+    }
+
+    function render(id, list) {
+      const el = document.getElementById(id);
+      if (!list.length) {
+        el.innerHTML = '<span class="text-success fw-bold">✓ All Synced</span>';
+        return;
+      }
+      el.innerHTML = list.map(item => `
+        <div class="mb-2 pb-2 border-bottom">
+          <span class="fw-bold text-danger">Q ${item.id}</span> — ${item.label}<br>
+          <small class="text-muted">${item.pageStr}</small>
+        </div>
+      `).join('');
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+</body>
+
+</html>
