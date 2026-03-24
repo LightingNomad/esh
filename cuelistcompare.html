@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Compare Cuelist CSV and ETC EOS CSV exports to find discrepancies.">
-  <title>Cuelist EOS CSV Compare - Edward S. Hansen</title>
+  <title>Cuelist EOS Compare - Edward S. Hansen</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
   <link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
@@ -30,15 +30,25 @@
     background-color: #e9ecef;
     border-color: #0d6efd;
   }
+  /* Strikethrough style for resolved issues */
+  .resolved-cue {
+    text-decoration: line-through;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+  }
+  
+  .rounded-4 {
+    border: none !important;
+  }
 </style>
 
-<body>
+<body class="bg-white">
 
   <main>
     <div class="container">
       <header>
         <nav
-          class="navbar bg-light p-4 mt-3 border-style rounded-4 justify-content-center justify-content-sm-center justify-content-md-between">
+          class="navbar bg-light p-4 mt-3 rounded-4 justify-content-center justify-content-sm-center justify-content-md-between">
           <a class="navbar-brand" href="./">
             <img src="./assets/ESH-Lighting-Logo.svg" width="" height="75" class="d-inline-block align-top"
               alt="ESH Lighting Logo">
@@ -55,30 +65,30 @@
     </div>
 
     <div class="container mt-3">
-      <div class="background-color bg-light border-style rounded-4 p-3">
-        <div class="row justify-content-md-center mb-3">
+      <div class="bg-light rounded-4 p-4">
+        <div class="row justify-content-center mb-4 text-center text-md-start">
           <div class="col-12 col-lg-8">
-            <span class="fs-3 fw-bold">Cue List / EOS Cue Compare</span><br>
-            <span>Identify missing cues between ETC EOS and Cuelist exports.</span>
+            <span class="fs-3 fw-bold">Cuelist / EOS Comparison</span><br>
+            <span class="text-muted">Compare EOS and Cuelist CVS exports side-by-side to find missing cues.</span>
           </div>
         </div>
 
-        <div class="row justify-content-md-center g-3">
+        <div class="row justify-content-center g-3">
           <div class="col-12 col-md-4">
             <div id="dropEos" class="drop-zone">
-              <span class="fw-bold">ETC EOS CSV</span><br>
-              <span id="infoEos" class="text-muted small">Drag file here or click</span>
+              <span class="fw-bold">EOS CSV</span><br>
+              <span id="infoEos" class="text-muted small">Drop here or click</span>
             </div>
           </div>
           <div class="col-12 col-md-4">
             <div id="dropCuelist" class="drop-zone">
               <span class="fw-bold">Cuelist CSV</span><br>
-              <span id="infoCuelist" class="text-muted small">Drag file here or click</span>
+              <span id="infoCuelist" class="text-muted small">Drop here or click</span>
             </div>
           </div>
         </div>
 
-        <div class="row justify-content-md-center mt-3">
+        <div class="row justify-content-center mt-4">
           <div class="col-12 col-md-8">
             <button onclick="runAudit()" class="btn btn-primary w-100 py-2 fw-bold">Compare</button>
           </div>
@@ -89,19 +99,19 @@
     <div class="container mt-3">
       <div class="row g-3">
         <div class="col-12 col-md-6">
-          <div class="background-color bg-light border-style rounded-4 p-3 h-100">
+          <div class="bg-light rounded-4 p-4 h-100">
             <span class="fs-4 fw-bold">Missing in EOS</span><br>
             <div id="resEos" class="mt-3">
-              <span class="text-muted">No report generated.</span>
+              <span class="text-muted small">Upload files to begin.</span>
             </div>
           </div>
         </div>
 
         <div class="col-12 col-md-6">
-          <div class="background-color bg-light border-style rounded-4 p-3 h-100">
+          <div class="bg-light rounded-4 p-4 h-100">
             <span class="fs-4 fw-bold">Missing in Cuelist</span><br>
             <div id="resCuelist" class="mt-3">
-              <span class="text-muted">No report generated.</span>
+              <span class="text-muted small">Upload files to begin.</span>
             </div>
           </div>
         </div>
@@ -109,8 +119,8 @@
     </div>
 
     <footer class="container mt-3">
-      <div class="bg-light px-3 border-style rounded-4">
-        <p class="py-3">&copy; Edward S. Hansen
+      <div class="bg-light px-4 rounded-4">
+        <p class="py-3 mb-0">&copy; Edward S. Hansen
           <script>document.write(new Date().getFullYear())</script>
         </p>
       </div>
@@ -148,6 +158,15 @@
       const reader = new FileReader();
       reader.onload = (e) => filesData[key] = e.target.result;
       reader.readAsText(file);
+    }
+
+    function toggleStrike(checkbox) {
+      const parentRow = checkbox.closest('.cue-row');
+      if (checkbox.checked) {
+        parentRow.classList.add('resolved-cue');
+      } else {
+        parentRow.classList.remove('resolved-cue');
+      }
     }
 
     function parseCSV(text) {
@@ -193,7 +212,6 @@
         const prevPage = prevQ ? clMap.get(prevQ).page : null;
         const nextPage = nextQ ? clMap.get(nextQ).page : null;
 
-        // Strict logic: only say "Page: X" if the cues on either side match
         if (prevPage && nextPage && prevPage === nextPage && prevPage !== "?") {
           return `Page: ${prevPage}`;
         } else if (prevPage && prevPage !== "?") {
@@ -223,9 +241,14 @@
         return;
       }
       el.innerHTML = list.map(item => `
-        <div class="mb-2 pb-2 border-bottom">
-          <span class="fw-bold text-danger">Q ${item.id}</span> — ${item.label}<br>
-          <small class="text-muted">${item.pageStr}</small>
+        <div class="cue-row mb-2 pb-2 border-bottom d-flex align-items-start">
+          <div class="form-check me-3 mt-1">
+            <input class="form-check-input" type="checkbox" onchange="toggleStrike(this)">
+          </div>
+          <div>
+            <span class="fw-bold text-danger">Q ${item.id}</span> — ${item.label}<br>
+            <small class="text-muted">${item.pageStr}</small>
+          </div>
         </div>
       `).join('');
     }
