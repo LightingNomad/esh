@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="LXNotes Script Builder">
+  <title>LXnotes Script Structure Builder - Edward S. Hansen</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
+  <link rel="mask-icon" href="https://lightingnomad.github.io/edward-hansen/images/favicon.ico" color="#000000">
+</head>
+
+<style>
+  .rounded-4 {
+    border: none !important;
+  }
+  .form-group-custom {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .form-group-page-custom {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+  }
+  .labels-custom {
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    display: grid;
+    gap: 10px;
+    margin-bottom: 5px;
+  }
+  .labels-page-custom {
+    grid-template-columns: 1fr 1fr auto;
+    display: grid;
+    gap: 10px;
+    margin-bottom: 5px;
+  }
+  .file-input-hidden {
+    display: none;
+  }
+</style>
+
+<body class="bg-white">
+
+  <main>
+    <div class="container">
+      <header>
+        <nav
+          class="navbar bg-light p-4 mt-3 rounded-4 justify-content-center justify-content-sm-center justify-content-md-between">
+          <a class="navbar-brand" href="./">
+            <img src="./assets/ESH-Lighting-Logo.svg" width="" height="75" class="d-inline-block align-top"
+              alt="ESH Lighting Logo">
+          </a>
+          <ul class="nav nav-pills justify-content-center">
+            <li class="nav-item"><a href="./" class="nav-link">Home</a></li>
+            <li class="nav-item"><a href="./work" class="nav-link">Work</a></li>
+            <li class="nav-item"><a href="./about" class="nav-link">About</a></li>
+            <li class="nav-item"><a href="./resume" class="nav-link">Resume</a></li>
+            <li class="nav-item"><a href="./contact" class="nav-link">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
+    </div>
+
+    <div class="container mt-3">
+      <div class="bg-light rounded-4 p-4">
+        <div class="row align-items-center justify-content-between g-3 text-center text-md-start">
+          <div class="col-12 col-md-8">
+            <span class="fs-3 fw-bold">LXNotes Script Structure Builder</span><br>
+          </div>
+          <div class="col-12 col-md-4 text-center text-md-end">
+            <button class="btn btn-secondary me-2 fw-bold" onclick="document.getElementById('importFile').click()">Import CSV</button>
+            <input type="file" id="importFile" class="file-input-hidden" accept=".csv" onchange="handleImport(this)">
+            <button class="btn btn-primary fw-bold" onclick="exportCSV()">Export CSV</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container mt-3">
+      <div class="bg-light rounded-4 p-4">
+        <span class="fs-4 fw-bold">Excel Paste Data Tool</span><br>
+        <span class="text-muted small">Paste columns directly from Excel (Expected layout: Name, Start Page, End Page, First Cue)</span>
+        <div class="mt-3">
+          <textarea id="excel-paste-input" class="form-control font-monospace text-secondary small" rows="3" placeholder="Example matrix format:&#10;Overture&#10;1&#10;1&#10;0.5&#10;Scene 1&#10;1&#10;5&#10;5"></textarea>
+          <div class="row align-items-center mt-3 g-3">
+            <div class="col-12 col-sm-6 d-flex align-items-center">
+              <label for="excel-target-type" class="me-2 text-nowrap">Import destination:</label>
+              <select id="excel-target-type" class="form-select w-auto py-1">
+                <option value="acts">Acts Table</option>
+                <option value="scenes" selected>Scenes Table</option>
+                <option value="songs">Songs Table</option>
+              </select>
+            </div>
+            <div class="col-12 col-sm-6 text-end">
+              <button class="btn btn-success fw-bold px-4" onclick="importFromExcelPaste()">Parse & Add Data</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container mt-3 mb-4">
+      <div class="row g-3">
+        
+        <div class="col-12 col-lg-7">
+          <div class="bg-light rounded-4 p-4 mb-3">
+            <span class="fs-4 fw-bold d-block mb-3">Acts</span>
+            <div class="labels-custom">
+              <label>Act Name/No.</label><label>Start Pg</label><label>End Pg</label><label>Start Cue</label><span></span>
+            </div>
+            <div id="acts-container"></div>
+            <button class="btn btn-outline-secondary btn-sm mt-2 fw-bold" onclick="addBlock('acts')">+ Add Act</button>
+          </div>
+
+          <div class="bg-light rounded-4 p-4 mb-3">
+            <span class="fs-4 fw-bold d-block mb-3">Scenes</span>
+            <div class="labels-custom">
+              <label>Scene Title</label><label>Start Pg</label><label>End Pg</label><label>Start Cue</label><span></span>
+            </div>
+            <div id="scenes-container"></div>
+            <button class="btn btn-outline-secondary btn-sm mt-2 fw-bold" onclick="addBlock('scenes')">+ Add Scene</button>
+          </div>
+
+          <div class="bg-light rounded-4 p-4">
+            <span class="fs-4 fw-bold d-block mb-3">Songs</span>
+            <div class="labels-custom">
+              <label>Song Title</label><label>Start Pg</label><label>End Pg</label><label>Start Cue</label><span></span>
+            </div>
+            <div id="songs-container"></div>
+            <button class="btn btn-outline-secondary btn-sm mt-2 fw-bold" onclick="addBlock('songs')">+ Add Song</button>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+          <div class="bg-light rounded-4 p-4 h-100">
+            <span class="fs-4 fw-bold d-block mb-1">Page Setup & Cues</span>
+            
+            <div class="p-3 bg-white border border-light-subtle rounded mb-3">
+              <span class="d-block small fw-bold text-dark mb-2">Bulk Create Pages:</span>
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <input type="number" id="bulk-start" class="form-control py-1 px-2" style="width: 80px;" value="1" min="1">
+                <span class="small text-muted">thru</span>
+                <input type="number" id="bulk-end" class="form-control py-1 px-2" style="width: 80px;" value="" min="1">
+                <button class="btn btn-success btn-sm fw-bold px-3 py-1" onclick="generateBulkPages()">Generate</button>
+              </div>
+            </div>
+
+            <div class="labels-page-custom">
+              <label>Page Number</label><label>First Cue on Page</label><span></span>
+            </div>
+            <div id="pages-container"></div>
+            <button class="btn btn-outline-secondary btn-sm mt-2 fw-bold" onclick="addPageRow('', '')">+ Add Custom Page</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer class="container mt-3">
+      <div class="bg-light px-4 rounded-4">
+        <p class="py-3 mb-0">&copy; Edward S. Hansen
+          <script>document.write(new Date().getFullYear())</script>
+        </p>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    let state = { acts: [], scenes: [], songs: [] };
+
+    function comparePages(a, b) {
+        return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    }
+
+    // Dynamic UI Rows Renderer Template
+    function createRowHTML(type, block, index) {
+        return `
+            <div class="form-group-custom" data-index="${index}">
+                <input type="text" class="form-control form-control-sm my-1" value="${block.name}" placeholder="Name" onchange="updateBlock('${type}', ${index}, 'name', this.value)">
+                <input type="text" class="form-control form-control-sm my-1" value="${block.startPage}" placeholder="Start" onchange="updateBlock('${type}', ${index}, 'startPage', this.value)">
+                <input type="text" class="form-control form-control-sm my-1" value="${block.endPage}" placeholder="End" onchange="updateBlock('${type}', ${index}, 'endPage', this.value)">
+                <input type="text" class="form-control form-control-sm my-1" value="${block.cue}" placeholder="Cue #" onchange="updateBlock('${type}', ${index}, 'cue', this.value)">
+                <button class="btn btn-outline-danger btn-sm px-2 py-1 my-1" onclick="deleteBlock('${type}', ${index})">&times;</button>
+            </div>
+        `;
+    }
+
+    function renderSection(type) {
+        document.getElementById(`${type}-container`).innerHTML = state[type].map((block, idx) => createRowHTML(type, block, idx)).join('');
+    }
+
+    function addBlock(type) {
+        state[type].push({ name: '', startPage: '', endPage: '', cue: '' });
+        renderSection(type);
+    }
+
+    function updateBlock(type, index, field, value) {
+        state[type][index][field] = value.trim();
+    }
+
+    function deleteBlock(type, index) {
+        state[type].splice(index, 1);
+        renderSection(type);
+    }
+
+    function generateBulkPages() {
+        const start = parseInt(document.getElementById('bulk-start').value);
+        const end = parseInt(document.getElementById('bulk-end').value);
+        if (isNaN(start) || isNaN(end) || start > end) return;
+
+        const existingPages = new Set();
+        document.querySelectorAll('#pages-container .page-num-field').forEach(input => {
+            if(input.value.trim()) existingPages.add(input.value.trim());
+        });
+
+        for (let i = start; i <= end; i++) {
+            if (!existingPages.has(i.toString())) addPageRow(i.toString(), '');
+        }
+        sortPageRows();
+    }
+
+    function addPageRow(pageNo = '', cueNo = '') {
+        const container = document.getElementById('pages-container');
+        const div = document.createElement('div');
+        div.className = 'form-group-page-custom';
+        div.innerHTML = `
+            <input type="text" class="form-control form-control-sm page-num-field my-1" value="${pageNo}" placeholder="e.g. 39a" onchange="sortPageRows()">
+            <input type="text" class="form-control form-control-sm page-cue-field my-1" value="${cueNo}" placeholder="Cue #">
+            <button class="btn btn-outline-danger btn-sm px-2 py-1 my-1" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function sortPageRows() {
+        const container = document.getElementById('pages-container');
+        const rows = Array.from(container.children);
+        rows.sort((a, b) => comparePages(a.querySelector('.page-num-field').value.trim(), b.querySelector('.page-num-field').value.trim()));
+        container.innerHTML = '';
+        rows.forEach(row => container.appendChild(row));
+    }
+
+    // Excel Clipboard Parsing Controller
+    function importFromExcelPaste() {
+        const text = document.getElementById('excel-paste-input').value;
+        const targetType = document.getElementById('excel-target-type').value;
+        if (!text.trim()) return;
+
+        const lines = text.split('\n');
+        let additionCount = 0;
+
+        lines.forEach(line => {
+            if (!line.trim()) return;
+            const columns = line.split('\t');
+            if (columns.length >= 1 && columns[0].trim()) {
+                state[targetType].push({
+                    name: columns[0] ? columns[0].trim() : '',
+                    startPage: columns[1] ? columns[1].trim() : '',
+                    endPage: columns[2] ? columns[2].trim() : '',
+                    cue: columns[3] ? columns[3].trim() : ''
+                });
+                additionCount++;
+            }
+        });
+
+        if(additionCount > 0) {
+            if (state[targetType].length > additionCount && !state[targetType][0].name) {
+                state[targetType].shift();
+            }
+            renderSection(targetType);
+            document.getElementById('excel-paste-input').value = '';
+            alert(`Successfully added ${additionCount} items into the ${targetType} tracker!`);
+        }
+    }
+
+    // --- TIMELINE EXPORT ENGINE WITH DUPLICATE TRACKING GUARDS ---
+    function exportCSV() {
+        let sortedPages = [];
+        let explicitPageCues = {};
+
+        document.querySelectorAll('#pages-container .form-group-page-custom').forEach(row => {
+            let p = row.querySelector('.page-num-field').value.trim();
+            let c = row.querySelector('.page-cue-field').value.trim();
+            if (p) {
+                sortedPages.push(p);
+                explicitPageCues[p] = c;
+            }
+        });
+
+        ['acts', 'scenes', 'songs'].forEach(type => {
+            state[type].forEach(b => {
+                if (b.startPage && !sortedPages.includes(b.startPage)) sortedPages.push(b.startPage);
+                if (b.endPage && !sortedPages.includes(b.endPage)) sortedPages.push(b.endPage);
+            });
+        });
+
+        sortedPages.sort(comparePages);
+
+        let headers = [
+            'Page Number', 'Page First Cue', 
+            'Act', 'Act First Cue', 'Act Continues', 
+            'Scene', 'Scene continues', 'Scene First Cue', 
+            'Song', 'Song continues', 'Song First Cue'
+        ];
+        let csvRows = [headers.join(",")];
+
+        sortedPages.forEach(page => {
+            let matchingActs = state.acts.filter(b => b.name && b.startPage && b.endPage && comparePages(page, b.startPage) >= 0 && comparePages(page, b.endPage) <= 0);
+            let matchingScenes = state.scenes.filter(b => b.name && b.startPage && b.endPage && comparePages(page, b.startPage) >= 0 && comparePages(page, b.endPage) <= 0);
+            let matchingSongs = state.songs.filter(b => b.name && b.startPage && b.endPage && comparePages(page, b.startPage) >= 0 && comparePages(page, b.endPage) <= 0);
+
+            let maxRowsNeeded = Math.max(1, matchingActs.length, matchingScenes.length, matchingSongs.length);
+
+            let actContinuedOnThisPage = false;
+            let sceneContinuedOnThisPage = false;
+            let songContinuedOnThisPage = false;
+
+            for (let i = 0; i < maxRowsNeeded; i++) {
+                let rowData = {};
+                rowData['Page Number'] = page;
+                rowData['Page First Cue'] = (i === 0) ? (explicitPageCues[page] || '') : '';
+
+                // Process Acts Matrix
+                let actObj = matchingActs[i] || matchingActs[0] || null;
+                if (actObj) {
+                    let isAbsoluteStart = (actObj.startPage === page && matchingActs.indexOf(actObj) === i);
+                    if (isAbsoluteStart) {
+                        rowData['Act'] = actObj.name; rowData['Act First Cue'] = actObj.cue; rowData['Act Continues'] = 'False';
+                    } else {
+                        rowData['Act'] = ''; rowData['Act First Cue'] = '';
+                        if (!actContinuedOnThisPage) {
+                            rowData['Act Continues'] = 'True'; actContinuedOnThisPage = true;
+                        } else {
+                            rowData['Act Continues'] = '';
+                        }
+                    }
+                } else {
+                    rowData['Act'] = ''; rowData['Act First Cue'] = ''; rowData['Act Continues'] = 'False';
+                }
+
+                // Process Scenes Matrix
+                let sceneObj = matchingScenes[i] || matchingScenes[0] || null;
+                if (sceneObj) {
+                    let isAbsoluteStart = (sceneObj.startPage === page && matchingScenes.indexOf(sceneObj) === i);
+                    if (isAbsoluteStart) {
+                        rowData['Scene'] = sceneObj.name; rowData['Scene First Cue'] = sceneObj.cue; rowData['Scene continues'] = 'False';
+                    } else {
+                        rowData['Scene'] = ''; rowData['Scene First Cue'] = '';
+                        if (!sceneContinuedOnThisPage) {
+                            rowData['Scene continues'] = 'True'; sceneContinuedOnThisPage = true;
+                        } else {
+                            rowData['Scene continues'] = '';
+                        }
+                    }
+                } else {
+                    rowData['Scene'] = ''; rowData['Scene First Cue'] = ''; rowData['Scene continues'] = 'False';
+                }
+
+                // Process Songs Matrix
+                let songObj = matchingSongs[i] || matchingSongs[0] || null;
+                if (songObj) {
+                    let isAbsoluteStart = (songObj.startPage === page && matchingSongs.indexOf(songObj) === i);
+                    if (isAbsoluteStart) {
+                        rowData['Song'] = songObj.name; rowData['Song First Cue'] = songObj.cue; rowData['Song continues'] = 'False';
+                    } else {
+                        rowData['Song'] = ''; rowData['Song First Cue'] = '';
+                        if (!songContinuedOnThisPage) {
+                            rowData['Song continues'] = 'True'; songContinuedOnThisPage = true;
+                        } else {
+                            rowData['Song continues'] = '';
+                        }
+                    }
+                } else {
+                    rowData['Song'] = ''; rowData['Song First Cue'] = ''; rowData['Song continues'] = 'False';
+                }
+
+                let rowArray = headers.map(h => {
+                    let val = rowData[h] || '';
+                    return val.includes(',') ? `"${val}"` : val;
+                });
+                csvRows.push(rowArray.join(","));
+            }
+        });
+
+        let csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csvRows.join("\n"));
+        let link = document.createElement("a");
+        link.setAttribute("href", csvContent);
+        link.setAttribute("download", "lxnotes_scene_structure.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // --- BI-DIRECTIONAL IMPORT PARSING ---
+    function handleImport(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) { parseCSVToState(e.target.result); };
+        reader.readAsText(file);
+    }
+
+    function parseCSVToState(text) {
+        state = { acts: [], scenes: [], songs: [] };
+        document.getElementById('pages-container').innerHTML = '';
+
+        let lines = text.split('\n').map(line => {
+            return line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
+        });
+        
+        let headers = lines[0].map(h => h.trim().toLowerCase());
+        let pageCues = {};
+
+        let activeAct = null, activeScene = null, activeSong = null;
+
+        for (let i = 1; i < lines.length; i++) {
+            if (lines[i].length < headers.length || !lines[i][0]) continue;
+
+            let row = {};
+            headers.forEach((h, index) => { row[h] = lines[i][index] || ''; });
+
+            let page = row['page number'];
+            if (row['page first cue'] && !pageCues[page]) {
+                pageCues[page] = row['page first cue'];
+            } else if (!pageCues[page]) {
+                pageCues[page] = '';
+            }
+
+            if (row['act']) {
+                activeAct = { name: row['act'], startPage: page, endPage: page, cue: row['act first cue'] };
+                state.acts.push(activeAct);
+            } else if (row['act continues'].toLowerCase() === 'true' && activeAct) {
+                activeAct.endPage = page;
+            }
+
+            if (row['scene']) {
+                activeScene = { name: row['scene'], startPage: page, endPage: page, cue: row['scene first cue'] };
+                state.scenes.push(activeScene);
+            } else if (row['scene continues'].toLowerCase() === 'true' && activeScene) {
+                activeScene.endPage = page;
+            }
+
+            if (row['song']) {
+                activeSong = { name: row['song'], startPage: page, endPage: page, cue: row['song first cue'] };
+                state.songs.push(activeSong);
+            } else if (row['song continues'].toLowerCase() === 'true' && activeSong) {
+                activeSong.endPage = page;
+            }
+        }
+
+        renderSection('acts'); renderSection('scenes'); renderSection('songs');
+
+        Object.keys(pageCues).sort(comparePages).forEach(p => {
+            addPageRow(p, pageCues[p]);
+        });
+    }
+
+    addBlock('acts'); addBlock('scenes'); addBlock('songs');
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+</body>
+
+</html>
