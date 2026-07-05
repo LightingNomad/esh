@@ -360,7 +360,7 @@ export async function listRounds(filters: {
 
 // ---- scores ----
 
-export async function upsertScore(score: {
+interface ScoreInput {
   roundId: string;
   userId: string;
   holeNumber: number;
@@ -368,9 +368,10 @@ export async function upsertScore(score: {
   mulliganCount?: number;
   freeGameScored?: boolean;
   liveEntered?: boolean;
-}): Promise<void> {
-  const db = await getDB();
-  await db
+}
+
+function buildUpsertScoreStatement(db: D1Database, score: ScoreInput) {
+  return db
     .prepare(
       `INSERT INTO scores (id, round_id, user_id, hole_number, stroke_count, mulligan_count, free_game_scored, live_entered)
        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
@@ -389,8 +390,30 @@ export async function upsertScore(score: {
       score.mulliganCount ?? 0,
       score.freeGameScored ? 1 : 0,
       score.liveEntered ? 1 : 0
-    )
-    .run();
+    );
+}
+
+export async function upsertScore(score: ScoreInput): Promise<void> {
+  const db = await getDB();
+  await buildUpsertScoreStatement(db, score).run();
+}
+
+/**
+ * Writes many scores in as few D1 round-trips as possible — each db.batch()
+ * call counts as a single Worker subrequest regardless of how many
+ * statements it contains, unlike awaiting upsertScore() in a loop (used by
+ * bulk paths like CSV import, which can otherwise easily exceed the
+ * per-invocation subrequest limit).
+ */
+export async function upsertScoresBatch(scores: ScoreInput[]): Promise<void> {
+  if (scores.length === 0) return;
+  const db = await getDB();
+  const statements = scores.map((score) => buildUpsertScoreStatement(db, score));
+
+  const CHUNK_SIZE = 100;
+  for (let i = 0; i < statements.length; i += CHUNK_SIZE) {
+    await db.batch(statements.slice(i, i + CHUNK_SIZE));
+  }
 }
 
 export async function listScoresForRound(roundId: string): Promise<Score[]> {

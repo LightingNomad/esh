@@ -6,8 +6,9 @@ import {
   createRound,
   findCourseByName,
   findUserByEmail,
-  upsertScore,
+  upsertScoresBatch,
 } from "@/lib/queries";
+import type { User } from "@/lib/types";
 
 const HOLE_COLUMN_COUNT = 18;
 const FREE_GAME_HOLE_NUMBER = 19;
@@ -17,12 +18,26 @@ function truthy(value?: string): boolean {
   return ["1", "true", "yes", "y"].includes(value.trim().toLowerCase());
 }
 
+interface PendingScore {
+  roundId: string;
+  userId: string;
+  holeNumber: number;
+  strokeCount: number | null;
+  freeGameScored?: boolean;
+  liveEntered: boolean;
+}
+
 /**
  * Expected CSV: one row per player per round. Columns: course_name,
  * date_played (YYYY-MM-DD), player_email, hole_1..hole_18 (stroke counts,
  * blank if not played), free_game (Yes/No — whether the free-game hole was
  * scored), conditions, general_notes. Rows sharing the same course_name +
  * date_played are grouped into one round.
+ *
+ * All score writes are collected and applied in one batch at the end
+ * (see upsertScoresBatch) rather than one D1 call per hole per row — with
+ * many rows that would otherwise blow past the per-invocation subrequest
+ * limit.
  */
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
@@ -36,9 +51,10 @@ export async function POST(req: NextRequest) {
   const rows = parseCsv(csvText);
   const courseCache = new Map<string, string>();
   const roundCache = new Map<string, string>();
+  const playerCache = new Map<string, User | null>();
 
   let roundsCreated = 0;
-  let scoresImported = 0;
+  const pendingScores: PendingScore[] = [];
   const skipped: { row: number; reason: string }[] = [];
 
   for (let i = 0; i < rows.length; i++) {
@@ -57,7 +73,12 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    const player = await findUserByEmail(playerEmail);
+    const emailKey = playerEmail.toLowerCase();
+    let player = playerCache.get(emailKey);
+    if (player === undefined) {
+      player = await findUserByEmail(playerEmail);
+      playerCache.set(emailKey, player);
+    }
     if (!player) {
       skipped.push({ row: rowNum, reason: `Unknown player email: ${playerEmail}` });
       continue;
@@ -101,19 +122,18 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      await upsertScore({
+      pendingScores.push({
         roundId,
         userId: player.id,
         holeNumber,
         strokeCount,
         liveEntered: false,
       });
-      scoresImported++;
       importedAnyForRow = true;
     }
 
     if (truthy(row.free_game)) {
-      await upsertScore({
+      pendingScores.push({
         roundId,
         userId: player.id,
         holeNumber: FREE_GAME_HOLE_NUMBER,
@@ -121,7 +141,6 @@ export async function POST(req: NextRequest) {
         freeGameScored: true,
         liveEntered: false,
       });
-      scoresImported++;
       importedAnyForRow = true;
     }
 
@@ -130,5 +149,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ roundsCreated, scoresImported, skipped });
+  await upsertScoresBatch(pendingScores);
+
+  return NextResponse.json({ roundsCreated, scoresImported: pendingScores.length, skipped });
 }
