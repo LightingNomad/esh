@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { BASE_PATH } from "@/lib/basePath";
 
 interface ImportResult {
   roundsCreated: number;
@@ -23,7 +24,7 @@ export default function CsvImportDropzone() {
     setResult(null);
     try {
       const text = await file.text();
-      const res = await fetch("/api/import", {
+      const res = await fetch(`${BASE_PATH}/api/import`, {
         method: "POST",
         headers: { "Content-Type": "text/csv" },
         body: text,

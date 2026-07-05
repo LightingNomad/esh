@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import HoleEditorFields, { type HoleFormInput } from "@/components/HoleEditorFields";
+import { BASE_PATH } from "@/lib/basePath";
 import type { Course, Hole } from "@/lib/types";
 
 export default function EditCourseForm({
@@ -19,7 +20,7 @@ export default function EditCourseForm({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/courses/${course.id}/holes`)
+    fetch(`${BASE_PATH}/api/courses/${course.id}/holes`)
       .then((res) => res.json())
       .then((data) => {
         const loaded = (data as { holes: Hole[] }).holes.map((h) => ({
@@ -50,7 +51,7 @@ export default function EditCourseForm({
     e.preventDefault();
     setSubmitting(true);
     try {
-      await fetch(`/api/courses/${course.id}`, {
+      await fetch(`${BASE_PATH}/api/courses/${course.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, holes }),

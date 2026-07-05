@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BASE_PATH } from "@/lib/basePath";
 
 export default function RoundActions({
   roundId,
@@ -21,7 +22,9 @@ export default function RoundActions({
     if (!confirm("Remove this player's scores from the round?")) return;
     setBusy(true);
     try {
-      await fetch(`/api/rounds/${roundId}/players/${playerUserId}`, { method: "DELETE" });
+      await fetch(`${BASE_PATH}/api/rounds/${roundId}/players/${playerUserId}`, {
+        method: "DELETE",
+      });
       router.refresh();
     } finally {
       setBusy(false);
@@ -34,7 +37,7 @@ export default function RoundActions({
     }
     setBusy(true);
     try {
-      await fetch(`/api/rounds/${roundId}`, { method: "DELETE" });
+      await fetch(`${BASE_PATH}/api/rounds/${roundId}`, { method: "DELETE" });
       router.refresh();
     } finally {
       setBusy(false);

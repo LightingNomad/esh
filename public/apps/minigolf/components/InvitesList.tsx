@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { BASE_PATH } from "@/lib/basePath";
 
 interface Invite {
   id: string;
@@ -15,7 +16,7 @@ export default function InvitesList({ invites }: { invites: Invite[] }) {
   async function respond(id: string, status: "accepted" | "declined") {
     setRespondingId(id);
     try {
-      await fetch(`/api/invites/${id}/respond`, {
+      await fetch(`${BASE_PATH}/api/invites/${id}/respond`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),

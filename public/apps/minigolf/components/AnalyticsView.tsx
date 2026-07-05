@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { BASE_PATH } from "@/lib/basePath";
 
 interface UserOption {
   id: string;
@@ -36,7 +37,7 @@ export default function AnalyticsView({ users }: { users: UserOption[] }) {
 
   useEffect(() => {
     if (!playerId) return;
-    fetch(`/api/players/${playerId}/scores`)
+    fetch(`${BASE_PATH}/api/players/${playerId}/scores`)
       .then((res) => res.json())
       .then((data) => setScores((data as { scores: PlayerScore[] }).scores));
   }, [playerId]);

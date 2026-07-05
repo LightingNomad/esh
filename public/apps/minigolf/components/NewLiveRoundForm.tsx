@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import WeatherInput from "@/components/WeatherInput";
+import { BASE_PATH } from "@/lib/basePath";
 
 interface UserOption {
   id: string;
@@ -52,7 +53,7 @@ export default function NewLiveRoundForm({
     if (order.length === 0) return;
     setStarting(true);
     try {
-      const res = await fetch("/api/rounds", {
+      const res = await fetch(`${BASE_PATH}/api/rounds`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

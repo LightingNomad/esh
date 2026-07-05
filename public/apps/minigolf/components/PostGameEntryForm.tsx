@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import WeatherInput from "@/components/WeatherInput";
+import { BASE_PATH } from "@/lib/basePath";
 import type { Course, Hole } from "@/lib/types";
 
 interface UserOption {
@@ -51,7 +52,7 @@ export default function PostGameEntryForm({
 
   useEffect(() => {
     if (!courseId) return;
-    fetch(`/api/courses/${courseId}/holes`)
+    fetch(`${BASE_PATH}/api/courses/${courseId}/holes`)
       .then((res) => res.json())
       .then((data) => setHoles((data as { holes: Hole[] }).holes));
   }, [courseId]);
@@ -98,7 +99,7 @@ export default function PostGameEntryForm({
     if (!courseId || selectedPlayers.length === 0) return;
     setSubmitting(true);
     try {
-      const roundRes = await fetch("/api/rounds", {
+      const roundRes = await fetch(`${BASE_PATH}/api/rounds`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -141,7 +142,7 @@ export default function PostGameEntryForm({
         }
       }
       if (scores.length > 0) {
-        await fetch("/api/scores", {
+        await fetch(`${BASE_PATH}/api/scores`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(scores),

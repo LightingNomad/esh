@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Hole, Score } from "@/lib/types";
+import { BASE_PATH } from "@/lib/basePath";
 
 interface Player {
   id: string;
@@ -64,7 +65,7 @@ export default function LiveScorecard({
     const key = scoreKey(userId, holeNumber);
     setSaving((s) => ({ ...s, [key]: true }));
     try {
-      await fetch("/api/scores", {
+      await fetch(`${BASE_PATH}/api/scores`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -99,7 +100,7 @@ export default function LiveScorecard({
   async function handleFinish() {
     setFinishing(true);
     try {
-      await fetch(`/api/rounds/${roundId}/complete`, { method: "POST" });
+      await fetch(`${BASE_PATH}/api/rounds/${roundId}/complete`, { method: "POST" });
       router.push(`/rounds/${roundId}/summary`);
     } finally {
       setFinishing(false);

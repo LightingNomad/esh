@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { BASE_PATH } from "@/lib/basePath";
 
 export default function GuestPlayerForm() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function GuestPlayerForm() {
     if (!name.trim() || !email.trim()) return;
     setSubmitting(true);
     try {
-      await fetch("/api/players/guest", {
+      await fetch(`${BASE_PATH}/api/players/guest`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email }),

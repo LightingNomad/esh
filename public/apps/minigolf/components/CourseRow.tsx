@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import EditCourseForm from "@/components/EditCourseForm";
+import { BASE_PATH } from "@/lib/basePath";
 import type { Course } from "@/lib/types";
 
 export default function CourseRow({ course }: { course: Course }) {
@@ -21,7 +22,7 @@ export default function CourseRow({ course }: { course: Course }) {
     }
     setDeleting(true);
     try {
-      await fetch(`/api/courses/${course.id}`, { method: "DELETE" });
+      await fetch(`${BASE_PATH}/api/courses/${course.id}`, { method: "DELETE" });
       router.refresh();
     } finally {
       setDeleting(false);

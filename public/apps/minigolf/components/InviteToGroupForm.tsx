@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BASE_PATH } from "@/lib/basePath";
 
 export default function InviteToGroupForm({ groupId }: { groupId: string }) {
   const [email, setEmail] = useState("");
@@ -12,7 +13,7 @@ export default function InviteToGroupForm({ groupId }: { groupId: string }) {
     if (!email.trim()) return;
     setSending(true);
     try {
-      await fetch(`/api/groups/${groupId}/invite`, {
+      await fetch(`${BASE_PATH}/api/groups/${groupId}/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ invitedEmail: email }),

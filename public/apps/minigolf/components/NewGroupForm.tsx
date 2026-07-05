@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { BASE_PATH } from "@/lib/basePath";
 
 export default function NewGroupForm() {
   const router = useRouter();
@@ -13,7 +14,7 @@ export default function NewGroupForm() {
     if (!name.trim()) return;
     setSubmitting(true);
     try {
-      await fetch("/api/groups", {
+      await fetch(`${BASE_PATH}/api/groups`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),

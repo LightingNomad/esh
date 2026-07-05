@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import HoleEditorFields, { defaultHoles, type HoleFormInput } from "@/components/HoleEditorFields";
+import { BASE_PATH } from "@/lib/basePath";
 
 export default function NewCourseForm() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function NewCourseForm() {
     if (!name.trim()) return;
     setSubmitting(true);
     try {
-      await fetch("/api/courses", {
+      await fetch(`${BASE_PATH}/api/courses`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, holes }),

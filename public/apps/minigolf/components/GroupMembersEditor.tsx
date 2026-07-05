@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { BASE_PATH } from "@/lib/basePath";
 import type { GroupMember, User } from "@/lib/types";
 
 function memberLabel(member: GroupMember, users: User[]) {
@@ -30,7 +31,7 @@ export default function GroupMembersEditor({
   async function saveNickname(memberId: string) {
     setSavingId(memberId);
     try {
-      await fetch(`/api/groups/${groupId}/members/${memberId}`, {
+      await fetch(`${BASE_PATH}/api/groups/${groupId}/members/${memberId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nickname: nicknames[memberId] || null }),
