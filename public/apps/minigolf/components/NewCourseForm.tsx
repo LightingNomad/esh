@@ -2,26 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-interface HoleInput {
-  holeNumber: number;
-  par: number;
-  tipsAndTricksNotes: string;
-}
-
-function defaultHoles(count: number): HoleInput[] {
-  return Array.from({ length: count }, (_, i) => ({
-    holeNumber: i + 1,
-    par: 3,
-    tipsAndTricksNotes: "",
-  }));
-}
+import HoleEditorFields, { defaultHoles, type HoleFormInput } from "@/components/HoleEditorFields";
 
 export default function NewCourseForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [holeCount, setHoleCount] = useState(18);
-  const [holes, setHoles] = useState<HoleInput[]>(defaultHoles(18));
+  const [holes, setHoles] = useState<HoleFormInput[]>(defaultHoles(18));
   const [expanded, setExpanded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -34,8 +21,16 @@ export default function NewCourseForm() {
     });
   }
 
-  function updateHole(index: number, patch: Partial<HoleInput>) {
+  function updateHole(index: number, patch: Partial<HoleFormInput>) {
     setHoles((prev) => prev.map((h, i) => (i === index ? { ...h, ...patch } : h)));
+  }
+
+  function setFreeGameHole(index: number) {
+    setHoles((prev) => prev.map((h, i) => ({ ...h, isFreeGameHole: i === index })));
+  }
+
+  function clearFreeGameHole() {
+    setHoles((prev) => prev.map((h) => ({ ...h, isFreeGameHole: false })));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -82,32 +77,16 @@ export default function NewCourseForm() {
         onClick={() => setExpanded((v) => !v)}
         className="text-sm underline"
       >
-        {expanded ? "Hide" : "Edit"} par / tips per hole
+        {expanded ? "Hide" : "Edit"} hole names / par / free game
       </button>
 
       {expanded && (
-        <div className="max-h-64 space-y-2 overflow-y-auto">
-          {holes.map((hole, i) => (
-            <div key={hole.holeNumber} className="flex items-center gap-2 text-sm">
-              <span className="w-14 shrink-0">Hole {hole.holeNumber}</span>
-              <input
-                type="number"
-                min={1}
-                value={hole.par}
-                onChange={(e) => updateHole(i, { par: Number(e.target.value) })}
-                className="w-16 rounded border border-black/20 px-2 py-1"
-                title="Par"
-              />
-              <input
-                type="text"
-                placeholder="Tips & tricks"
-                value={hole.tipsAndTricksNotes}
-                onChange={(e) => updateHole(i, { tipsAndTricksNotes: e.target.value })}
-                className="flex-1 rounded border border-black/20 px-2 py-1"
-              />
-            </div>
-          ))}
-        </div>
+        <HoleEditorFields
+          holes={holes}
+          onUpdateHole={updateHole}
+          onSetFreeGameHole={setFreeGameHole}
+          onClearFreeGameHole={clearFreeGameHole}
+        />
       )}
 
       <button

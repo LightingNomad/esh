@@ -1,5 +1,6 @@
 import {
   getCourse,
+  listGroupMembers,
   listHoles,
   listRounds,
   listScoresForRound,
@@ -7,8 +8,8 @@ import {
   listUsers,
 } from "@/lib/queries";
 import SpreadsheetFilters from "@/components/SpreadsheetFilters";
-import ShareButton from "@/components/ShareButton";
-import type { Hole, Round, Score } from "@/lib/types";
+import RoundActions from "@/components/RoundActions";
+import type { GroupMember, Hole, Round, Score, User } from "@/lib/types";
 
 interface RoundRow {
   round: Round;
@@ -16,11 +17,14 @@ interface RoundRow {
   holes: Hole[];
   scores: Score[];
   coursePar: number;
+  groupMembers: GroupMember[];
 }
 
-function userLabel(users: { id: string; email: string; name: string | null }[], id: string) {
-  const user = users.find((u) => u.id === id);
-  return user?.name || user?.email || id;
+function resolveLabel(users: User[], groupMembers: GroupMember[], userId: string) {
+  const nickname = groupMembers.find((m) => m.user_id === userId)?.nickname;
+  if (nickname) return nickname;
+  const user = users.find((u) => u.id === userId);
+  return user?.name || user?.email || userId;
 }
 
 export default async function SpreadsheetPage({
@@ -39,23 +43,34 @@ export default async function SpreadsheetPage({
 
   const roundRows: RoundRow[] = await Promise.all(
     rounds.map(async (round) => {
-      const [course, holes, scores] = await Promise.all([
+      const [course, holes, scores, groupMembers] = await Promise.all([
         getCourse(round.course_id),
         listHoles(round.course_id),
         listScoresForRound(round.id),
+        round.group_id ? listGroupMembers(round.group_id) : Promise.resolve([]),
       ]);
-      const coursePar = holes.reduce((sum, h) => sum + h.par, 0);
-      return { round, courseName: course?.name ?? "Unknown course", holes, scores, coursePar };
+      const coursePar = holes
+        .filter((h) => !h.is_free_game_hole)
+        .reduce((sum, h) => sum + h.par, 0);
+      return {
+        round,
+        courseName: course?.name ?? "Unknown course",
+        holes,
+        scores,
+        coursePar,
+        groupMembers,
+      };
     })
   );
 
-  // Aggregate stats over the active data set.
+  // Aggregate stats over the active data set (free-game holes excluded, no stroke count).
   const aggregateScores: Score[] = player
     ? await listScoresForUser(player, { dateFrom, dateTo })
     : roundRows.flatMap((r) => r.scores);
 
   const holeAverages = new Map<number, { sum: number; count: number }>();
   for (const s of aggregateScores) {
+    if (s.stroke_count == null) continue;
     const bucket = holeAverages.get(s.hole_number) ?? { sum: 0, count: 0 };
     bucket.sum += s.stroke_count;
     bucket.count += 1;
@@ -65,6 +80,7 @@ export default async function SpreadsheetPage({
   // Total per round+player, to average across the data set.
   const totalsByRoundPlayer = new Map<string, number>();
   for (const s of aggregateScores) {
+    if (s.stroke_count == null) continue;
     const key = `${s.round_id}-${s.user_id}`;
     totalsByRoundPlayer.set(key, (totalsByRoundPlayer.get(key) ?? 0) + s.stroke_count);
   }
@@ -105,14 +121,8 @@ export default async function SpreadsheetPage({
       </div>
 
       <div className="space-y-6">
-        {roundRows.map(({ round, courseName, holes, scores, coursePar }) => {
+        {roundRows.map(({ round, courseName, holes, scores, coursePar, groupMembers }) => {
           const playerIds = Array.from(new Set(scores.map((s) => s.user_id)));
-          const playerTotals = playerIds.map((userId) => ({
-            label: userLabel(users, userId),
-            total: scores
-              .filter((s) => s.user_id === userId)
-              .reduce((sum, s) => sum + s.stroke_count, 0),
-          }));
           return (
             <div key={round.id} className="overflow-x-auto rounded-lg border border-black/10">
               <div className="flex items-center justify-between border-b border-black/10 bg-black/5 p-2 text-sm font-medium">
@@ -121,8 +131,9 @@ export default async function SpreadsheetPage({
                   {round.weather_conditions ? ` · ${round.weather_conditions}` : ""}
                   {" · Course par: "}
                   {coursePar}
+                  {!round.completed_at && " · In progress"}
                 </span>
-                <ShareButton datePlayed={round.date_played} playerTotals={playerTotals} />
+                <RoundActions roundId={round.id} />
               </div>
               <table className="min-w-full border-collapse text-sm">
                 <thead>
@@ -130,41 +141,50 @@ export default async function SpreadsheetPage({
                     <th className="border border-black/10 p-1 text-left">Player</th>
                     {holes.map((h) => (
                       <th key={h.id} className="border border-black/10 p-1">
-                        {h.hole_number}
+                        {h.is_free_game_hole ? "🎁" : h.hole_number}
                       </th>
                     ))}
                     <th className="border border-black/10 p-1">Total</th>
                     <th className="border border-black/10 p-1">+/- Par</th>
+                    <th className="border border-black/10 p-1"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {playerIds.map((userId) => {
                     const playerScores = scores.filter((s) => s.user_id === userId);
-                    const total = playerScores.reduce((sum, s) => sum + s.stroke_count, 0);
+                    const total = playerScores.reduce(
+                      (sum, s) => sum + (s.stroke_count ?? 0),
+                      0
+                    );
                     return (
                       <tr key={userId}>
                         <td className="border border-black/10 p-1 font-medium">
-                          {userLabel(users, userId)}
+                          {resolveLabel(users, groupMembers, userId)}
                         </td>
                         {holes.map((h) => {
                           const cell = playerScores.find((s) => s.hole_number === h.hole_number);
+                          if (h.is_free_game_hole) {
+                            return (
+                              <td key={h.id} className="border border-black/10 p-1 text-center">
+                                {cell?.free_game_scored ? "✓" : ""}
+                              </td>
+                            );
+                          }
                           const isAce = cell?.stroke_count === 1;
                           const overThreshold =
                             thresholdNum != null &&
-                            cell != null &&
+                            cell?.stroke_count != null &&
                             cell.stroke_count >= thresholdNum;
                           return (
                             <td
                               key={h.id}
                               className={`border border-black/10 p-1 text-center ${
-                                isAce
-                                  ? "bg-green-200"
-                                  : overThreshold
-                                    ? "bg-red-200"
-                                    : ""
+                                isAce ? "bg-green-200" : overThreshold ? "bg-red-200" : ""
                               }`}
                             >
-                              {cell ? `${cell.stroke_count}${cell.took_mulligan ? "*" : ""}` : ""}
+                              {cell?.stroke_count != null
+                                ? `${cell.stroke_count}${"*".repeat(cell.mulligan_count)}`
+                                : ""}
                             </td>
                           );
                         })}
@@ -173,6 +193,9 @@ export default async function SpreadsheetPage({
                         </td>
                         <td className="border border-black/10 p-1 text-center">
                           {total - coursePar > 0 ? `+${total - coursePar}` : total - coursePar}
+                        </td>
+                        <td className="border border-black/10 p-1 text-center">
+                          <RoundActions roundId={round.id} playerUserId={userId} compact />
                         </td>
                       </tr>
                     );

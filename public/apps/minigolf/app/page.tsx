@@ -1,10 +1,19 @@
 import Link from "next/link";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { listCourses, listGroupsForUser, listPendingInvites } from "@/lib/queries";
+import {
+  listCourses,
+  listGroupMembers,
+  listGroupsForUser,
+  listPendingInvites,
+  listUsers,
+} from "@/lib/queries";
 import NewCourseForm from "@/components/NewCourseForm";
 import NewGroupForm from "@/components/NewGroupForm";
 import InvitesList from "@/components/InvitesList";
 import InviteToGroupForm from "@/components/InviteToGroupForm";
+import GroupMembersEditor from "@/components/GroupMembersEditor";
+import GuestPlayerForm from "@/components/GuestPlayerForm";
+import CourseRow from "@/components/CourseRow";
 import CsvImportDropzone from "@/components/CsvImportDropzone";
 
 export default async function DashboardPage() {
@@ -14,11 +23,16 @@ export default async function DashboardPage() {
   const user = await currentUser();
   const email = user?.primaryEmailAddress?.emailAddress;
 
-  const [courses, groups, invites] = await Promise.all([
+  const [courses, groups, invites, users] = await Promise.all([
     listCourses(),
     listGroupsForUser(userId),
     email ? listPendingInvites(email) : Promise.resolve([]),
+    listUsers(),
   ]);
+
+  const groupMembersByGroup = await Promise.all(
+    groups.map((g) => listGroupMembers(g.id))
+  );
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 p-4">
@@ -35,23 +49,7 @@ export default async function DashboardPage() {
         <h2 className="mb-2 text-lg font-semibold">Courses</h2>
         <ul className="mb-3 divide-y divide-black/10 rounded-lg border border-black/10">
           {courses.map((course) => (
-            <li key={course.id} className="flex items-center justify-between p-3">
-              <span>{course.name}</span>
-              <div className="flex gap-2 text-sm">
-                <Link
-                  href={`/live/new?courseId=${course.id}`}
-                  className="rounded bg-green-600 px-3 py-1 text-white"
-                >
-                  Start Live Round
-                </Link>
-                <Link
-                  href={`/post-game/new?courseId=${course.id}`}
-                  className="rounded bg-black/80 px-3 py-1 text-white"
-                >
-                  Log Past Round
-                </Link>
-              </div>
-            </li>
+            <CourseRow key={course.id} course={course} />
           ))}
           {courses.length === 0 && (
             <li className="p-3 text-sm text-black/60">No courses yet — add one below.</li>
@@ -63,9 +61,14 @@ export default async function DashboardPage() {
       <section>
         <h2 className="mb-2 text-lg font-semibold">Groups</h2>
         <ul className="mb-3 divide-y divide-black/10 rounded-lg border border-black/10">
-          {groups.map((group) => (
+          {groups.map((group, i) => (
             <li key={group.id} className="space-y-2 p-3">
               <span className="font-medium">{group.name}</span>
+              <GroupMembersEditor
+                groupId={group.id}
+                members={groupMembersByGroup[i]}
+                users={users}
+              />
               <InviteToGroupForm groupId={group.id} />
             </li>
           ))}
@@ -74,6 +77,11 @@ export default async function DashboardPage() {
           )}
         </ul>
         <NewGroupForm />
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-lg font-semibold">Guest Players</h2>
+        <GuestPlayerForm />
       </section>
 
       <section>

@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { getRound, listHoles, listScoresForRound, listUsers } from "@/lib/queries";
+import { getRound, listGroupMembers, listHoles, listScoresForRound, listUsers } from "@/lib/queries";
 import LiveScorecard from "@/components/LiveScorecard";
 
 export default async function LiveRoundPage({
@@ -18,10 +18,11 @@ export default async function LiveRoundPage({
   const round = await getRound(roundId);
   if (!round) return <p className="p-4">Round not found.</p>;
 
-  const [holes, scores, users] = await Promise.all([
+  const [holes, scores, users, groupMembers] = await Promise.all([
     listHoles(round.course_id),
     listScoresForRound(roundId),
     listUsers(),
+    round.group_id ? listGroupMembers(round.group_id) : Promise.resolve([]),
   ]);
 
   const playerIds = (players ?? "").split(",").filter(Boolean);
@@ -30,17 +31,10 @@ export default async function LiveRoundPage({
     : Array.from(new Set(scores.map((s) => s.user_id)));
 
   const roster = players_.map((id) => {
+    const nickname = groupMembers.find((m) => m.user_id === id)?.nickname;
     const user = users.find((u) => u.id === id);
-    return { id, label: user?.name || user?.email || id };
+    return { id, label: nickname || user?.name || user?.email || id };
   });
 
-  return (
-    <LiveScorecard
-      roundId={roundId}
-      datePlayed={round.date_played}
-      holes={holes}
-      players={roster}
-      initialScores={scores}
-    />
-  );
+  return <LiveScorecard roundId={roundId} holes={holes} players={roster} initialScores={scores} />;
 }

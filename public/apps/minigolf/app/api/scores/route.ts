@@ -6,9 +6,9 @@ interface ScoreInput {
   roundId: string;
   userId: string;
   holeNumber: number;
-  strokeCount: number;
-  tookMulligan?: boolean;
-  hitHoleNineteenHoleInOne?: boolean;
+  strokeCount: number | null;
+  mulliganCount?: number;
+  freeGameScored?: boolean;
   liveEntered?: boolean;
 }
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const scores = Array.isArray(body) ? body : [body];
 
   for (const score of scores) {
-    if (!score.roundId || !score.userId || score.holeNumber == null || score.strokeCount == null) {
+    if (!score.roundId || !score.userId || score.holeNumber == null) {
       return NextResponse.json({ error: "Invalid score payload" }, { status: 400 });
     }
     await upsertScore(score);

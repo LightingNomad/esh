@@ -64,8 +64,8 @@ export default function CsvImportDropzone() {
           : "Drop a CSV file here, or click to choose one"}
         <div className="mt-1 text-xs text-black/50">
           Columns: course_name, date_played, player_email, hole_number,
-          stroke_count, weather_conditions, general_notes, took_mulligan,
-          hit_hole_nineteen_hole_in_one
+          stroke_count (or free_game_scored for the free-game hole),
+          weather_conditions, general_notes, mulligan_count
         </div>
       </div>
       <input

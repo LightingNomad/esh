@@ -1,9 +1,18 @@
 export interface PlayerTotal {
   label: string;
   total: number;
+  freeGame?: boolean;
+}
+
+function formatDateMMDDYYYY(datePlayed: string): string {
+  const [year, month, day] = datePlayed.split("-");
+  if (!year || !month || !day) return datePlayed;
+  return `${month}/${day}/${year}`;
 }
 
 export function buildShareText(datePlayed: string, playerTotals: PlayerTotal[]): string {
-  const lines = playerTotals.map((p) => `${p.label}: ${p.total}`);
-  return `Mini Golf ${datePlayed} Score Update ⛳️:\n${lines.join("\n")}`;
+  const lines = playerTotals.map(
+    (p) => `${p.label}: ${p.total}${p.freeGame ? "+Free Game" : ""}`
+  );
+  return `Mini Golf ${formatDateMMDDYYYY(datePlayed)} Score Update ⛳️:\n${lines.join("\n")}`;
 }

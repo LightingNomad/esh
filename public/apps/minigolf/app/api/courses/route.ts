@@ -16,7 +16,13 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json()) as {
     name: string;
-    holes?: { holeNumber: number; par: number; tipsAndTricksNotes?: string }[];
+    holes?: {
+      holeNumber: number;
+      par: number;
+      tipsAndTricksNotes?: string;
+      name?: string;
+      isFreeGameHole?: boolean;
+    }[];
   };
 
   if (!body.name) {

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createRound, listRounds } from "@/lib/queries";
-import type { WeatherCondition } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
   const { userId } = await auth();
@@ -24,8 +23,9 @@ export async function POST(req: NextRequest) {
     courseId: string;
     groupId?: string;
     datePlayed: string;
-    weatherConditions?: WeatherCondition;
+    weatherConditions?: string;
     generalNotes?: string;
+    completed?: boolean;
   };
 
   if (!body.courseId || !body.datePlayed) {
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
     datePlayed: body.datePlayed,
     weatherConditions: body.weatherConditions,
     generalNotes: body.generalNotes,
+    completedAt: body.completed ? new Date().toISOString() : undefined,
   });
   return NextResponse.json({ round }, { status: 201 });
 }

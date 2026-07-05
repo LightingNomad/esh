@@ -1,24 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { deleteRound, getRound, listHoles, listScoresForRound } from "@/lib/queries";
+import { deleteCourse, setCourseHoles, updateCourse } from "@/lib/queries";
 
-export async function GET(
-  _req: NextRequest,
+export async function PATCH(
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const round = await getRound(id);
-  if (!round) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const body = (await req.json()) as {
+    name: string;
+    holes: {
+      holeNumber: number;
+      par: number;
+      tipsAndTricksNotes?: string;
+      name?: string;
+      isFreeGameHole?: boolean;
+    }[];
+  };
 
-  const [holes, scores] = await Promise.all([
-    listHoles(round.course_id),
-    listScoresForRound(id),
-  ]);
+  await updateCourse(id, body.name);
+  if (body.holes?.length) {
+    await setCourseHoles(id, body.holes);
+  }
 
-  return NextResponse.json({ round, holes, scores });
+  return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
@@ -29,6 +37,6 @@ export async function DELETE(
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  await deleteRound(id);
+  await deleteCourse(id);
   return NextResponse.json({ ok: true });
 }

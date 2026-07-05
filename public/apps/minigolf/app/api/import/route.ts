@@ -8,9 +8,6 @@ import {
   findUserByEmail,
   upsertScore,
 } from "@/lib/queries";
-import type { WeatherCondition } from "@/lib/types";
-
-const VALID_WEATHER: readonly string[] = ["sunny", "rainy", "damp", "windy"];
 
 function truthy(value?: string): boolean {
   if (!value) return false;
@@ -19,8 +16,9 @@ function truthy(value?: string): boolean {
 
 /**
  * Expected CSV columns: course_name, date_played (YYYY-MM-DD), player_email,
- * hole_number, stroke_count, and optionally weather_conditions, general_notes,
- * took_mulligan, hit_hole_nineteen_hole_in_one.
+ * hole_number, and either stroke_count or free_game_scored (for the course's
+ * free-game hole), plus optionally weather_conditions, general_notes,
+ * mulligan_count.
  * Rows sharing the same course_name + date_played are grouped into one round.
  */
 export async function POST(req: NextRequest) {
@@ -48,14 +46,16 @@ export async function POST(req: NextRequest) {
     const datePlayed = row.date_played?.trim();
     const playerEmail = row.player_email?.trim();
     const holeNumber = Number(row.hole_number);
-    const strokeCount = Number(row.stroke_count);
+    const freeGameScored = truthy(row.free_game_scored);
+    const strokeCount = row.stroke_count?.trim() ? Number(row.stroke_count) : null;
 
     if (
       !courseName ||
       !datePlayed ||
       !playerEmail ||
       !Number.isFinite(holeNumber) ||
-      !Number.isFinite(strokeCount)
+      (strokeCount === null && !freeGameScored) ||
+      (strokeCount !== null && !Number.isFinite(strokeCount))
     ) {
       skipped.push({ row: rowNum, reason: "Missing or invalid required field" });
       continue;
@@ -75,19 +75,15 @@ export async function POST(req: NextRequest) {
       courseCache.set(courseKey, courseId);
     }
 
-    const weatherRaw = row.weather_conditions?.trim().toLowerCase();
-    const weatherConditions = VALID_WEATHER.includes(weatherRaw ?? "")
-      ? (weatherRaw as WeatherCondition)
-      : undefined;
-
     const roundKey = `${courseId}|${datePlayed}`;
     let roundId = roundCache.get(roundKey);
     if (!roundId) {
       const round = await createRound({
         courseId,
         datePlayed,
-        weatherConditions,
+        weatherConditions: row.weather_conditions?.trim() || undefined,
         generalNotes: row.general_notes?.trim() || undefined,
+        completedAt: new Date().toISOString(),
       });
       roundId = round.id;
       roundCache.set(roundKey, roundId);
@@ -99,8 +95,8 @@ export async function POST(req: NextRequest) {
       userId: player.id,
       holeNumber,
       strokeCount,
-      tookMulligan: truthy(row.took_mulligan),
-      hitHoleNineteenHoleInOne: truthy(row.hit_hole_nineteen_hole_in_one),
+      mulliganCount: row.mulligan_count ? Number(row.mulligan_count) || 0 : 0,
+      freeGameScored,
       liveEntered: false,
     });
     scoresImported++;

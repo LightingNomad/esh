@@ -2,20 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { WeatherCondition } from "@/lib/types";
+import WeatherInput from "@/components/WeatherInput";
 
 interface UserOption {
   id: string;
   email: string;
   name: string | null;
+  is_guest: number;
 }
 
 interface GroupOption {
   id: string;
   name: string;
 }
-
-const WEATHER_OPTIONS: WeatherCondition[] = ["sunny", "rainy", "damp", "windy"];
 
 export default function NewLiveRoundForm({
   courseId,
@@ -30,13 +29,13 @@ export default function NewLiveRoundForm({
   const [order, setOrder] = useState<string[]>([]);
   const [datePlayed, setDatePlayed] = useState(() => new Date().toISOString().slice(0, 10));
   const [groupId, setGroupId] = useState("");
-  const [weather, setWeather] = useState<WeatherCondition | "">("");
+  const [weather, setWeather] = useState("");
   const [starting, setStarting] = useState(false);
 
   const available = users.filter((u) => !order.includes(u.id));
 
   function label(u: UserOption) {
-    return u.name || u.email;
+    return (u.name || u.email) + (u.is_guest ? " (guest)" : "");
   }
 
   function move(index: number, delta: number) {
@@ -102,18 +101,7 @@ export default function NewLiveRoundForm({
 
       <div>
         <label className="mb-1 block text-sm font-medium">Weather (optional)</label>
-        <select
-          value={weather}
-          onChange={(e) => setWeather(e.target.value as WeatherCondition | "")}
-          className="w-full rounded border border-black/20 px-3 py-2"
-        >
-          <option value="">Unspecified</option>
-          {WEATHER_OPTIONS.map((w) => (
-            <option key={w} value={w}>
-              {w}
-            </option>
-          ))}
-        </select>
+        <WeatherInput value={weather} onChange={setWeather} />
       </div>
 
       <div>

@@ -15,13 +15,18 @@ interface UserOption {
   id: string;
   email: string;
   name: string | null;
+  is_guest: number;
 }
 
 interface PlayerScore {
   round_id: string;
   hole_number: number;
-  stroke_count: number;
+  stroke_count: number | null;
   date_played: string;
+}
+
+function label(u: UserOption) {
+  return (u.name || u.email) + (u.is_guest ? " (guest)" : "");
 }
 
 export default function AnalyticsView({ users }: { users: UserOption[] }) {
@@ -36,28 +41,30 @@ export default function AnalyticsView({ users }: { users: UserOption[] }) {
       .then((data) => setScores((data as { scores: PlayerScore[] }).scores));
   }, [playerId]);
 
+  const scoredHoles = useMemo(() => scores.filter((s) => s.stroke_count != null), [scores]);
+
   const totalsOverTime = useMemo(() => {
     const byRound = new Map<string, { date: string; total: number }>();
-    for (const s of scores) {
+    for (const s of scoredHoles) {
       const existing = byRound.get(s.round_id) ?? { date: s.date_played, total: 0 };
-      existing.total += s.stroke_count;
+      existing.total += s.stroke_count ?? 0;
       byRound.set(s.round_id, existing);
     }
     return Array.from(byRound.values()).sort((a, b) => a.date.localeCompare(b.date));
-  }, [scores]);
+  }, [scoredHoles]);
 
   const holeNumbers = useMemo(
-    () => Array.from(new Set(scores.map((s) => s.hole_number))).sort((a, b) => a - b),
-    [scores]
+    () => Array.from(new Set(scoredHoles.map((s) => s.hole_number))).sort((a, b) => a - b),
+    [scoredHoles]
   );
 
   const holeTrend = useMemo(
     () =>
-      scores
+      scoredHoles
         .filter((s) => s.hole_number === holeNumber)
         .map((s) => ({ date: s.date_played, strokes: s.stroke_count }))
         .sort((a, b) => a.date.localeCompare(b.date)),
-    [scores, holeNumber]
+    [scoredHoles, holeNumber]
   );
 
   return (
@@ -71,7 +78,7 @@ export default function AnalyticsView({ users }: { users: UserOption[] }) {
         >
           {users.map((u) => (
             <option key={u.id} value={u.id}>
-              {u.name || u.email}
+              {label(u)}
             </option>
           ))}
         </select>

@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Course, Hole, WeatherCondition } from "@/lib/types";
+import WeatherInput from "@/components/WeatherInput";
+import type { Course, Hole } from "@/lib/types";
 
 interface UserOption {
   id: string;
   email: string;
   name: string | null;
+  is_guest: number;
 }
 
 interface GroupOption {
@@ -17,15 +19,12 @@ interface GroupOption {
 
 interface CellEntry {
   strokeCount: string;
-  tookMulligan: boolean;
-  hitHoleNineteenHoleInOne: boolean;
+  mulliganCount: string;
+  freeGameScored: boolean;
 }
 
-const WEATHER_OPTIONS: WeatherCondition[] = ["sunny", "rainy", "damp", "windy"];
-const BONUS_HOLE_NUMBER = 19;
-
 function label(u: UserOption) {
-  return u.name || u.email;
+  return (u.name || u.email) + (u.is_guest ? " (guest)" : "");
 }
 
 export default function PostGameEntryForm({
@@ -44,7 +43,7 @@ export default function PostGameEntryForm({
   const [holes, setHoles] = useState<Hole[]>([]);
   const [groupId, setGroupId] = useState("");
   const [datePlayed, setDatePlayed] = useState(() => new Date().toISOString().slice(0, 10));
-  const [weather, setWeather] = useState<WeatherCondition | "">("");
+  const [weather, setWeather] = useState("");
   const [generalNotes, setGeneralNotes] = useState("");
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [cells, setCells] = useState<Record<string, CellEntry>>({});
@@ -57,11 +56,7 @@ export default function PostGameEntryForm({
       .then((data) => setHoles((data as { holes: Hole[] }).holes));
   }, [courseId]);
 
-  const holeNumbers = (() => {
-    const nums = holes.map((h) => h.hole_number);
-    if (!nums.includes(BONUS_HOLE_NUMBER)) nums.push(BONUS_HOLE_NUMBER);
-    return nums.sort((a, b) => a - b);
-  })();
+  const holeNumbers = holes.map((h) => h.hole_number).sort((a, b) => a - b);
 
   function togglePlayer(id: string) {
     setSelectedPlayers((prev) =>
@@ -75,8 +70,8 @@ export default function PostGameEntryForm({
 
   const emptyCell: CellEntry = {
     strokeCount: "",
-    tookMulligan: false,
-    hitHoleNineteenHoleInOne: false,
+    mulliganCount: "0",
+    freeGameScored: false,
   };
 
   function updateCell(userId: string, holeNumber: number, patch: Partial<CellEntry>) {
@@ -92,8 +87,9 @@ export default function PostGameEntryForm({
   }
 
   function playerTotal(userId: string) {
-    return holeNumbers.reduce((sum, holeNumber) => {
-      const value = Number(cells[cellKey(userId, holeNumber)]?.strokeCount);
+    return holes.reduce((sum, hole) => {
+      if (hole.is_free_game_hole) return sum;
+      const value = Number(cells[cellKey(userId, hole.hole_number)]?.strokeCount);
       return sum + (Number.isFinite(value) ? value : 0);
     }, 0);
   }
@@ -111,24 +107,37 @@ export default function PostGameEntryForm({
           datePlayed,
           weatherConditions: weather || undefined,
           generalNotes: generalNotes || undefined,
+          completed: true,
         }),
       });
       const { round } = (await roundRes.json()) as { round: { id: string } };
 
       const scores = [];
       for (const userId of selectedPlayers) {
-        for (const holeNumber of holeNumbers) {
-          const entry = cells[cellKey(userId, holeNumber)];
-          if (!entry || entry.strokeCount === "") continue;
-          scores.push({
-            roundId: round.id,
-            userId,
-            holeNumber,
-            strokeCount: Number(entry.strokeCount),
-            tookMulligan: entry.tookMulligan,
-            hitHoleNineteenHoleInOne: entry.hitHoleNineteenHoleInOne,
-            liveEntered: false,
-          });
+        for (const hole of holes) {
+          const entry = cells[cellKey(userId, hole.hole_number)];
+          if (!entry) continue;
+          if (hole.is_free_game_hole) {
+            if (!entry.freeGameScored) continue;
+            scores.push({
+              roundId: round.id,
+              userId,
+              holeNumber: hole.hole_number,
+              strokeCount: null,
+              freeGameScored: true,
+              liveEntered: false,
+            });
+          } else {
+            if (entry.strokeCount === "") continue;
+            scores.push({
+              roundId: round.id,
+              userId,
+              holeNumber: hole.hole_number,
+              strokeCount: Number(entry.strokeCount),
+              mulliganCount: Number(entry.mulliganCount) || 0,
+              liveEntered: false,
+            });
+          }
         }
       }
       if (scores.length > 0) {
@@ -139,7 +148,7 @@ export default function PostGameEntryForm({
         });
       }
 
-      router.push("/spreadsheet");
+      router.push(`/rounds/${round.id}/summary`);
     } finally {
       setSubmitting(false);
     }
@@ -190,18 +199,7 @@ export default function PostGameEntryForm({
         )}
         <div>
           <label className="mb-1 block text-sm font-medium">Weather</label>
-          <select
-            value={weather}
-            onChange={(e) => setWeather(e.target.value as WeatherCondition | "")}
-            className="w-full rounded border border-black/20 px-3 py-2"
-          >
-            <option value="">Unspecified</option>
-            {WEATHER_OPTIONS.map((w) => (
-              <option key={w} value={w}>
-                {w}
-              </option>
-            ))}
-          </select>
+          <WeatherInput value={weather} onChange={setWeather} />
         </div>
       </div>
 
@@ -239,11 +237,14 @@ export default function PostGameEntryForm({
             <thead>
               <tr>
                 <th className="border border-black/10 p-1 text-left">Player</th>
-                {holeNumbers.map((num) => (
-                  <th key={num} className="border border-black/10 p-1">
-                    {num === BONUS_HOLE_NUMBER ? "H19" : num}
-                  </th>
-                ))}
+                {holeNumbers.map((num) => {
+                  const hole = holes.find((h) => h.hole_number === num);
+                  return (
+                    <th key={num} className="border border-black/10 p-1">
+                      {hole?.is_free_game_hole ? "🎁" : num}
+                    </th>
+                  );
+                })}
                 <th className="border border-black/10 p-1">Total</th>
               </tr>
             </thead>
@@ -255,49 +256,50 @@ export default function PostGameEntryForm({
                     <td className="border border-black/10 p-1 font-medium">
                       {user ? label(user) : userId}
                     </td>
-                    {holeNumbers.map((holeNumber) => {
-                      const key = cellKey(userId, holeNumber);
+                    {holes.map((hole) => {
+                      const key = cellKey(userId, hole.hole_number);
                       const entry = cells[key];
-                      const isBonus = holeNumber === BONUS_HOLE_NUMBER;
                       return (
-                        <td key={holeNumber} className="border border-black/10 p-1">
-                          <input
-                            type="number"
-                            min={1}
-                            value={entry?.strokeCount ?? ""}
-                            onChange={(e) =>
-                              updateCell(userId, holeNumber, { strokeCount: e.target.value })
-                            }
-                            className="w-12 rounded border border-black/20 px-1 py-0.5 text-center"
-                          />
-                          <div className="mt-1 flex flex-col gap-0.5 text-[10px]">
-                            <label className="flex items-center gap-1">
+                        <td key={hole.hole_number} className="border border-black/10 p-1">
+                          {hole.is_free_game_hole ? (
+                            <input
+                              type="checkbox"
+                              checked={entry?.freeGameScored ?? false}
+                              onChange={(e) =>
+                                updateCell(userId, hole.hole_number, {
+                                  freeGameScored: e.target.checked,
+                                })
+                              }
+                            />
+                          ) : (
+                            <>
                               <input
-                                type="checkbox"
-                                checked={entry?.tookMulligan ?? false}
+                                type="number"
+                                min={1}
+                                value={entry?.strokeCount ?? ""}
                                 onChange={(e) =>
-                                  updateCell(userId, holeNumber, {
-                                    tookMulligan: e.target.checked,
+                                  updateCell(userId, hole.hole_number, {
+                                    strokeCount: e.target.value,
                                   })
                                 }
+                                className="w-12 rounded border border-black/20 px-1 py-0.5 text-center"
                               />
-                              mull.
-                            </label>
-                            {isBonus && (
-                              <label className="flex items-center gap-1">
+                              <div className="mt-1 flex items-center gap-1 text-[10px]">
+                                <span>mull.</span>
                                 <input
-                                  type="checkbox"
-                                  checked={entry?.hitHoleNineteenHoleInOne ?? false}
+                                  type="number"
+                                  min={0}
+                                  value={entry?.mulliganCount ?? "0"}
                                   onChange={(e) =>
-                                    updateCell(userId, holeNumber, {
-                                      hitHoleNineteenHoleInOne: e.target.checked,
+                                    updateCell(userId, hole.hole_number, {
+                                      mulliganCount: e.target.value,
                                     })
                                   }
+                                  className="w-10 rounded border border-black/20 px-1 py-0.5 text-center"
                                 />
-                                ace
-                              </label>
-                            )}
-                          </div>
+                              </div>
+                            </>
+                          )}
                         </td>
                       );
                     })}
