@@ -89,6 +89,15 @@ export default async function SpreadsheetPage({
     ? totals.reduce((a, b) => a + b, 0) / totals.length
     : 0;
 
+  const holeNameByNumber = new Map<number, string>();
+  for (const row of roundRows) {
+    for (const h of row.holes) {
+      if (h.name && !holeNameByNumber.has(h.hole_number)) {
+        holeNameByNumber.set(h.hole_number, h.name);
+      }
+    }
+  }
+
   return (
     <div className="p-4">
       <h1 className="mb-4 text-2xl font-bold">Spreadsheet View</h1>
@@ -101,26 +110,7 @@ export default async function SpreadsheetPage({
         initialThreshold={threshold ?? ""}
       />
 
-      <div className="my-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-black/10 p-3">
-          <div className="text-xs text-black/60">Total average score (active data set)</div>
-          <div className="text-2xl font-bold">{overallAverageTotal.toFixed(2)}</div>
-        </div>
-        <div className="rounded-lg border border-black/10 p-3 sm:col-span-2">
-          <div className="mb-1 text-xs text-black/60">Average score per hole</div>
-          <div className="flex flex-wrap gap-3 text-sm">
-            {Array.from(holeAverages.entries())
-              .sort((a, b) => a[0] - b[0])
-              .map(([hole, { sum, count }]) => (
-                <span key={hole}>
-                  H{hole}: <strong>{(sum / count).toFixed(1)}</strong>
-                </span>
-              ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-6">
+      <div className="my-4 space-y-6">
         {roundRows.map(({ round, courseName, holes, scores, coursePar, groupMembers }) => {
           const playerIds = Array.from(new Set(scores.map((s) => s.user_id)));
           return (
@@ -140,7 +130,11 @@ export default async function SpreadsheetPage({
                   <tr>
                     <th className="border border-black/10 p-1 text-left">Player</th>
                     {holes.map((h) => (
-                      <th key={h.id} className="border border-black/10 p-1">
+                      <th
+                        key={h.id}
+                        className="border border-black/10 p-1"
+                        title={h.name ?? undefined}
+                      >
                         {h.is_free_game_hole ? "🎁" : h.hole_number}
                       </th>
                     ))}
@@ -207,6 +201,22 @@ export default async function SpreadsheetPage({
         })}
         {roundRows.length === 0 && (
           <p className="text-sm text-black/60">No rounds match the current filters.</p>
+        )}
+
+        {roundRows.length > 0 && (
+          <div className="flex flex-wrap items-center gap-4 border-t border-black/10 pt-4 text-sm">
+            <span className="font-semibold">Averages (active data set):</span>
+            {Array.from(holeAverages.entries())
+              .sort((a, b) => a[0] - b[0])
+              .map(([hole, { sum, count }]) => (
+                <span key={hole} title={holeNameByNumber.get(hole)}>
+                  H{hole}: <strong>{(sum / count).toFixed(1)}</strong>
+                </span>
+              ))}
+            <span className="ml-auto">
+              Total average: <strong>{overallAverageTotal.toFixed(2)}</strong>
+            </span>
+          </div>
         )}
       </div>
     </div>

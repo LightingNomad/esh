@@ -9,17 +9,20 @@ import {
   upsertScore,
 } from "@/lib/queries";
 
+const HOLE_COLUMN_COUNT = 18;
+const FREE_GAME_HOLE_NUMBER = 19;
+
 function truthy(value?: string): boolean {
   if (!value) return false;
   return ["1", "true", "yes", "y"].includes(value.trim().toLowerCase());
 }
 
 /**
- * Expected CSV columns: course_name, date_played (YYYY-MM-DD), player_email,
- * hole_number, and either stroke_count or free_game_scored (for the course's
- * free-game hole), plus optionally weather_conditions, general_notes,
- * mulligan_count.
- * Rows sharing the same course_name + date_played are grouped into one round.
+ * Expected CSV: one row per player per round. Columns: course_name,
+ * date_played (YYYY-MM-DD), player_email, hole_1..hole_18 (stroke counts,
+ * blank if not played), free_game (Yes/No — whether the free-game hole was
+ * scored), conditions, general_notes. Rows sharing the same course_name +
+ * date_played are grouped into one round.
  */
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
@@ -45,19 +48,12 @@ export async function POST(req: NextRequest) {
     const courseName = row.course_name?.trim();
     const datePlayed = row.date_played?.trim();
     const playerEmail = row.player_email?.trim();
-    const holeNumber = Number(row.hole_number);
-    const freeGameScored = truthy(row.free_game_scored);
-    const strokeCount = row.stroke_count?.trim() ? Number(row.stroke_count) : null;
 
-    if (
-      !courseName ||
-      !datePlayed ||
-      !playerEmail ||
-      !Number.isFinite(holeNumber) ||
-      (strokeCount === null && !freeGameScored) ||
-      (strokeCount !== null && !Number.isFinite(strokeCount))
-    ) {
-      skipped.push({ row: rowNum, reason: "Missing or invalid required field" });
+    if (!courseName || !datePlayed || !playerEmail) {
+      skipped.push({
+        row: rowNum,
+        reason: "Missing course_name, date_played, or player_email",
+      });
       continue;
     }
 
@@ -81,7 +77,7 @@ export async function POST(req: NextRequest) {
       const round = await createRound({
         courseId,
         datePlayed,
-        weatherConditions: row.weather_conditions?.trim() || undefined,
+        weatherConditions: row.conditions?.trim() || undefined,
         generalNotes: row.general_notes?.trim() || undefined,
         completedAt: new Date().toISOString(),
       });
@@ -90,16 +86,48 @@ export async function POST(req: NextRequest) {
       roundsCreated++;
     }
 
-    await upsertScore({
-      roundId,
-      userId: player.id,
-      holeNumber,
-      strokeCount,
-      mulliganCount: row.mulligan_count ? Number(row.mulligan_count) || 0 : 0,
-      freeGameScored,
-      liveEntered: false,
-    });
-    scoresImported++;
+    let importedAnyForRow = false;
+
+    for (let holeNumber = 1; holeNumber <= HOLE_COLUMN_COUNT; holeNumber++) {
+      const raw = row[`hole_${holeNumber}`]?.trim();
+      if (!raw) continue;
+
+      const strokeCount = Number(raw);
+      if (!Number.isFinite(strokeCount)) {
+        skipped.push({
+          row: rowNum,
+          reason: `Invalid stroke count for hole_${holeNumber}: "${raw}"`,
+        });
+        continue;
+      }
+
+      await upsertScore({
+        roundId,
+        userId: player.id,
+        holeNumber,
+        strokeCount,
+        liveEntered: false,
+      });
+      scoresImported++;
+      importedAnyForRow = true;
+    }
+
+    if (truthy(row.free_game)) {
+      await upsertScore({
+        roundId,
+        userId: player.id,
+        holeNumber: FREE_GAME_HOLE_NUMBER,
+        strokeCount: null,
+        freeGameScored: true,
+        liveEntered: false,
+      });
+      scoresImported++;
+      importedAnyForRow = true;
+    }
+
+    if (!importedAnyForRow) {
+      skipped.push({ row: rowNum, reason: "No hole scores or free game recorded" });
+    }
   }
 
   return NextResponse.json({ roundsCreated, scoresImported, skipped });

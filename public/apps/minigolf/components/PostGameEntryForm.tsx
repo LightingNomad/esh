@@ -240,7 +240,11 @@ export default function PostGameEntryForm({
                 {holeNumbers.map((num) => {
                   const hole = holes.find((h) => h.hole_number === num);
                   return (
-                    <th key={num} className="border border-black/10 p-1">
+                    <th
+                      key={num}
+                      className="border border-black/10 p-1"
+                      title={hole?.name ?? undefined}
+                    >
                       {hole?.is_free_game_hole ? "🎁" : num}
                     </th>
                   );
