@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { parseCsv } from "@/lib/csv";
+import { normalizeDatePlayed } from "@/lib/dates";
 import {
   createCourse,
   createRound,
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
     const rowNum = i + 2; // account for the header row
 
     const courseName = row.course_name?.trim();
-    const datePlayed = row.date_played?.trim();
+    const datePlayed = row.date_played?.trim() ? normalizeDatePlayed(row.date_played.trim()) : undefined;
     const playerEmail = row.player_email?.trim();
 
     if (!courseName || !datePlayed || !playerEmail) {

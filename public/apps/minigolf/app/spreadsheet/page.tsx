@@ -2,6 +2,7 @@ import {
   getCourse,
   listGroupMembers,
   listHoles,
+  listRoundYears,
   listRounds,
   listScoresForRound,
   listScoresForUser,
@@ -30,16 +31,23 @@ function resolveLabel(users: User[], groupMembers: GroupMember[], userId: string
 export default async function SpreadsheetPage({
   searchParams,
 }: {
-  searchParams: Promise<{ player?: string; dateFrom?: string; dateTo?: string; threshold?: string }>;
+  searchParams: Promise<{
+    player?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    threshold?: string;
+    sort?: string;
+  }>;
 }) {
-  const { player, dateFrom, dateTo, threshold } = await searchParams;
+  const { player, dateFrom, dateTo, threshold, sort } = await searchParams;
   const thresholdNum = threshold ? Number(threshold) : undefined;
+  const sortDirection = sort === "asc" ? "asc" : "desc";
 
-  const users = await listUsers();
+  const [users, availableYears] = await Promise.all([listUsers(), listRoundYears()]);
 
   const rounds = player
-    ? await listRounds({ userId: player, dateFrom, dateTo })
-    : await listRounds({ dateFrom, dateTo });
+    ? await listRounds({ userId: player, dateFrom, dateTo, sort: sortDirection })
+    : await listRounds({ dateFrom, dateTo, sort: sortDirection });
 
   const roundRows: RoundRow[] = await Promise.all(
     rounds.map(async (round) => {
@@ -104,10 +112,12 @@ export default async function SpreadsheetPage({
 
       <SpreadsheetFilters
         users={users}
+        availableYears={availableYears}
         initialPlayer={player ?? ""}
         initialDateFrom={dateFrom ?? ""}
         initialDateTo={dateTo ?? ""}
         initialThreshold={threshold ?? ""}
+        initialSort={sortDirection}
       />
 
       <div className="my-4 space-y-6">

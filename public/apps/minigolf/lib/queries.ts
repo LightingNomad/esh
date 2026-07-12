@@ -330,6 +330,7 @@ export async function listRounds(filters: {
   userId?: string;
   dateFrom?: string;
   dateTo?: string;
+  sort?: "asc" | "desc";
 }): Promise<Round[]> {
   const db = await getDB();
   const conditions: string[] = [];
@@ -351,11 +352,23 @@ export async function listRounds(filters: {
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const direction = filters.sort === "asc" ? "ASC" : "DESC";
   const { results } = await db
-    .prepare(`SELECT r.* FROM rounds r ${where} ORDER BY r.date_played DESC`)
+    .prepare(`SELECT r.* FROM rounds r ${where} ORDER BY r.date_played ${direction}`)
     .bind(...params)
     .all<Round>();
   return results;
+}
+
+/** Distinct years that have at least one round, newest first — powers the spreadsheet's quick year filter. */
+export async function listRoundYears(): Promise<string[]> {
+  const db = await getDB();
+  const { results } = await db
+    .prepare(
+      `SELECT DISTINCT substr(date_played, 1, 4) AS year FROM rounds ORDER BY year DESC`
+    )
+    .all<{ year: string }>();
+  return results.map((r) => r.year);
 }
 
 // ---- scores ----
