@@ -438,6 +438,32 @@ export async function listScoresForRound(roundId: string): Promise<Score[]> {
   return results;
 }
 
+export interface HoleScoreRecord {
+  userId: string;
+  roundId: string;
+  datePlayed: string;
+  strokeCount: number;
+}
+
+/** Every recorded stroke count for one hole of one course, best (lowest) first — powers per-hole analytics (best score / holes-in-one). */
+export async function listHoleScoreRecords(
+  courseId: string,
+  holeNumber: number
+): Promise<HoleScoreRecord[]> {
+  const db = await getDB();
+  const { results } = await db
+    .prepare(
+      `SELECT s.user_id as userId, s.round_id as roundId, s.stroke_count as strokeCount, r.date_played as datePlayed
+       FROM scores s
+       JOIN rounds r ON r.id = s.round_id
+       WHERE r.course_id = ?1 AND s.hole_number = ?2 AND s.stroke_count IS NOT NULL
+       ORDER BY s.stroke_count ASC, r.date_played ASC`
+    )
+    .bind(courseId, holeNumber)
+    .all<HoleScoreRecord>();
+  return results;
+}
+
 export async function listScoresForUser(
   userId: string,
   filters: { dateFrom?: string; dateTo?: string } = {}

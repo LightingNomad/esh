@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { BASE_PATH } from "@/lib/basePath";
+import type { Hole } from "@/lib/types";
 
 interface UserOption {
   id: string;
@@ -26,14 +27,36 @@ interface PlayerScore {
   date_played: string;
 }
 
+interface HoleRecord {
+  userId: string;
+  roundId: string;
+  datePlayed: string;
+  strokeCount: number;
+}
+
 function label(u: UserOption) {
   return (u.name || u.email) + (u.is_guest ? " (guest)" : "");
 }
 
-export default function AnalyticsView({ users }: { users: UserOption[] }) {
+export default function AnalyticsView({
+  users,
+  courseId,
+  holes,
+}: {
+  users: UserOption[];
+  courseId: string | null;
+  holes: Hole[];
+}) {
   const [playerId, setPlayerId] = useState(users[0]?.id ?? "");
   const [scores, setScores] = useState<PlayerScore[]>([]);
   const [holeNumber, setHoleNumber] = useState(1);
+  const [holeRecords, setHoleRecords] = useState<HoleRecord[]>([]);
+
+  const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
+  const holeByNumber = useMemo(
+    () => new Map(holes.map((h) => [h.hole_number, h])),
+    [holes]
+  );
 
   useEffect(() => {
     if (!playerId) return;
@@ -42,7 +65,27 @@ export default function AnalyticsView({ users }: { users: UserOption[] }) {
       .then((data) => setScores((data as { scores: PlayerScore[] }).scores));
   }, [playerId]);
 
+  useEffect(() => {
+    if (!courseId) return;
+    fetch(`${BASE_PATH}/api/courses/${courseId}/hole-records?hole=${holeNumber}`)
+      .then((res) => res.json())
+      .then((data) => setHoleRecords((data as { records: HoleRecord[] }).records));
+  }, [courseId, holeNumber]);
+
   const scoredHoles = useMemo(() => scores.filter((s) => s.stroke_count != null), [scores]);
+
+  const bestScore = holeRecords[0]?.strokeCount;
+  const bestEntries = useMemo(
+    () => (bestScore == null ? [] : holeRecords.filter((r) => r.strokeCount === bestScore)),
+    [holeRecords, bestScore]
+  );
+  const aceEntries = useMemo(() => holeRecords.filter((r) => r.strokeCount === 1), [holeRecords]);
+  const selectedHole = holeByNumber.get(holeNumber);
+
+  function playerLabel(userId: string) {
+    const u = userById.get(userId);
+    return u ? label(u) : userId;
+  }
 
   const totalsOverTime = useMemo(() => {
     const byRound = new Map<string, { date: string; total: number }>();
@@ -108,11 +151,15 @@ export default function AnalyticsView({ users }: { users: UserOption[] }) {
             onChange={(e) => setHoleNumber(Number(e.target.value))}
             className="rounded border border-black/20 px-2 py-1 text-sm"
           >
-            {(holeNumbers.length ? holeNumbers : [1]).map((h) => (
-              <option key={h} value={h}>
-                Hole {h}
-              </option>
-            ))}
+            {(holeNumbers.length ? holeNumbers : [1]).map((h) => {
+              const name = holeByNumber.get(h)?.name;
+              return (
+                <option key={h} value={h}>
+                  Hole {h}
+                  {name ? ` – ${name}` : ""}
+                </option>
+              );
+            })}
           </select>
         </div>
         <div className="h-64 w-full">
@@ -126,6 +173,46 @@ export default function AnalyticsView({ users }: { users: UserOption[] }) {
             </LineChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      <div>
+        <h2 className="mb-2 text-lg font-semibold">
+          Hole records
+          {selectedHole &&
+            ` — ${selectedHole.name ?? `Hole ${holeNumber}`} (par ${selectedHole.par})`}
+        </h2>
+        {!courseId ? (
+          <p className="text-sm text-black/60">No course set up yet.</p>
+        ) : holeRecords.length === 0 ? (
+          <p className="text-sm text-black/60">No scores recorded for this hole yet.</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded border border-black/10 p-3">
+              <div className="text-sm font-medium text-black/60">Best score</div>
+              <div className="text-2xl font-bold">{bestScore}</div>
+              <ul className="mt-1 space-y-0.5 text-sm">
+                {bestEntries.map((r) => (
+                  <li key={`${r.roundId}-${r.userId}`}>
+                    {playerLabel(r.userId)} — {r.datePlayed}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded border border-black/10 p-3">
+              <div className="text-sm font-medium text-black/60">Holes-in-one</div>
+              <div className="text-2xl font-bold">{aceEntries.length}</div>
+              {aceEntries.length > 0 && (
+                <ul className="mt-1 space-y-0.5 text-sm">
+                  {aceEntries.map((r) => (
+                    <li key={`${r.roundId}-${r.userId}`}>
+                      {playerLabel(r.userId)} — {r.datePlayed}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

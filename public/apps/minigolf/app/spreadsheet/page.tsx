@@ -10,6 +10,7 @@ import {
 } from "@/lib/queries";
 import SpreadsheetFilters from "@/components/SpreadsheetFilters";
 import RoundActions from "@/components/RoundActions";
+import HoleInfoPopover from "@/components/HoleInfoPopover";
 import type { GroupMember, Hole, Round, Score, User } from "@/lib/types";
 
 interface RoundRow {
@@ -97,11 +98,11 @@ export default async function SpreadsheetPage({
     ? totals.reduce((a, b) => a + b, 0) / totals.length
     : 0;
 
-  const holeNameByNumber = new Map<number, string>();
+  const holeByNumber = new Map<number, Hole>();
   for (const row of roundRows) {
     for (const h of row.holes) {
-      if (h.name && !holeNameByNumber.has(h.hole_number)) {
-        holeNameByNumber.set(h.hole_number, h.name);
+      if (!holeByNumber.has(h.hole_number)) {
+        holeByNumber.set(h.hole_number, h);
       }
     }
   }
@@ -140,12 +141,8 @@ export default async function SpreadsheetPage({
                   <tr>
                     <th className="border border-black/10 p-1 text-left">Player</th>
                     {holes.map((h) => (
-                      <th
-                        key={h.id}
-                        className="border border-black/10 p-1"
-                        title={h.name ?? undefined}
-                      >
-                        {h.is_free_game_hole ? "🎁" : h.hole_number}
+                      <th key={h.id} className="border border-black/10 p-1">
+                        <HoleInfoPopover hole={h} />
                       </th>
                     ))}
                     <th className="border border-black/10 p-1">Total</th>
@@ -218,11 +215,19 @@ export default async function SpreadsheetPage({
             <span className="font-semibold">Averages (active data set):</span>
             {Array.from(holeAverages.entries())
               .sort((a, b) => a[0] - b[0])
-              .map(([hole, { sum, count }]) => (
-                <span key={hole} title={holeNameByNumber.get(hole)}>
-                  H{hole}: <strong>{(sum / count).toFixed(1)}</strong>
-                </span>
-              ))}
+              .map(([hole, { sum, count }]) => {
+                const h = holeByNumber.get(hole);
+                return (
+                  <span key={hole}>
+                    {h ? (
+                      <HoleInfoPopover hole={h} trigger={`H${hole}`} />
+                    ) : (
+                      `H${hole}`
+                    )}
+                    : <strong>{(sum / count).toFixed(1)}</strong>
+                  </span>
+                );
+              })}
             <span className="ml-auto">
               Total average: <strong>{overallAverageTotal.toFixed(2)}</strong>
             </span>
