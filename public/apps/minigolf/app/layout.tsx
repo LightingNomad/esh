@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider, SignInButton, UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { mergeGuestIntoRealUser, syncUser } from "@/lib/queries";
+import VersionBadge from "@/components/VersionBadge";
 import "./globals.css";
 
 const NAV_LINKS = [
@@ -65,6 +66,7 @@ export default async function RootLayout({
             {user ? <UserButton /> : <SignInButton mode="modal" />}
           </header>
           <main className="flex-1">{children}</main>
+          <VersionBadge />
         </body>
       </html>
     </ClerkProvider>

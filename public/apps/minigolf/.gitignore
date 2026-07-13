@@ -45,3 +45,6 @@ next-env.d.ts
 .wrangler
 .dev.vars
 cloudflare-env.d.ts
+
+# generated at build/dev time, see scripts/generate-version.mjs
+/lib/version.json
