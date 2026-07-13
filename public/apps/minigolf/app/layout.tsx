@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider, SignInButton, UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
-import { mergeGuestIntoRealUser, syncUser } from "@/lib/queries";
+import { isAdmin, mergeGuestIntoRealUser, syncUser } from "@/lib/queries";
 import VersionBadge from "@/components/VersionBadge";
 import "./globals.css";
 
@@ -34,6 +34,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await currentUser();
+  let admin = false;
   if (user) {
     const email = user.primaryEmailAddress?.emailAddress ?? "";
     const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || null;
@@ -41,7 +42,10 @@ export default async function RootLayout({
     if (email) {
       await mergeGuestIntoRealUser(user.id, email);
     }
+    admin = await isAdmin(user.id);
   }
+
+  const navLinks = admin ? [...NAV_LINKS, { href: "/admin/users", label: "Admin" }] : NAV_LINKS;
 
   return (
     <ClerkProvider>
@@ -55,7 +59,7 @@ export default async function RootLayout({
               <span className="font-semibold">⛳️ Mini Golf</span>
               {user && (
                 <nav className="flex gap-3 text-sm">
-                  {NAV_LINKS.map((link) => (
+                  {navLinks.map((link) => (
                     <Link key={link.href} href={link.href} className="hover:underline">
                       {link.label}
                     </Link>

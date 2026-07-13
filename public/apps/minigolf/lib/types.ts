@@ -1,4 +1,5 @@
 export type InviteStatus = "pending" | "accepted";
+export type UserRole = "user" | "admin";
 
 export interface User {
   id: string;
@@ -6,6 +7,7 @@ export interface User {
   name: string | null;
   created_at: string;
   is_guest: number;
+  role: UserRole;
 }
 
 export interface Course {

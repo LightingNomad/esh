@@ -1,5 +1,15 @@
 import { getDB } from "./db";
-import type { Course, Group, GroupMember, Hole, InviteStatus, Round, Score, User } from "./types";
+import type {
+  Course,
+  Group,
+  GroupMember,
+  Hole,
+  InviteStatus,
+  Round,
+  Score,
+  User,
+  UserRole,
+} from "./types";
 
 // ---- users ----
 
@@ -28,7 +38,7 @@ export async function createGuestUser(name: string, email: string): Promise<User
     .prepare(`INSERT INTO users (id, email, name, is_guest) VALUES (?1, ?2, ?3, 1)`)
     .bind(id, email, name)
     .run();
-  return { id, email, name, created_at: new Date().toISOString(), is_guest: 1 };
+  return { id, email, name, created_at: new Date().toISOString(), is_guest: 1, role: "user" };
 }
 
 export async function mergeGuestIntoRealUser(realUserId: string, email: string): Promise<void> {
@@ -55,6 +65,51 @@ export async function listUsers(): Promise<User[]> {
   const db = await getDB();
   const { results } = await db.prepare(`SELECT * FROM users ORDER BY name`).all<User>();
   return results;
+}
+
+export async function isAdmin(userId: string): Promise<boolean> {
+  const db = await getDB();
+  const user = await db
+    .prepare(`SELECT role FROM users WHERE id = ?1`)
+    .bind(userId)
+    .first<{ role: UserRole }>();
+  return user?.role === "admin";
+}
+
+export async function setUserRole(userId: string, role: UserRole): Promise<void> {
+  const db = await getDB();
+  await db.prepare(`UPDATE users SET role = ?1 WHERE id = ?2`).bind(role, userId).run();
+}
+
+/**
+ * Refuses to delete a user who created any courses or groups, rather than
+ * silently orphaning those rows (created_by_user_id is NOT NULL) or
+ * reassigning ownership the admin didn't ask for.
+ */
+export async function deleteUser(userId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const db = await getDB();
+  const owned = await db
+    .prepare(
+      `SELECT
+         (SELECT COUNT(*) FROM courses WHERE created_by_user_id = ?1) as courseCount,
+         (SELECT COUNT(*) FROM groups WHERE created_by_user_id = ?1) as groupCount`
+    )
+    .bind(userId)
+    .first<{ courseCount: number; groupCount: number }>();
+
+  if (owned && (owned.courseCount > 0 || owned.groupCount > 0)) {
+    return {
+      ok: false,
+      error: "This user created courses or groups still in use — reassign or remove those first.",
+    };
+  }
+
+  await db.batch([
+    db.prepare(`DELETE FROM scores WHERE user_id = ?1`).bind(userId),
+    db.prepare(`DELETE FROM group_members WHERE user_id = ?1`).bind(userId),
+    db.prepare(`DELETE FROM users WHERE id = ?1`).bind(userId),
+  ]);
+  return { ok: true };
 }
 
 // ---- courses ----
