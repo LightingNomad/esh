@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import WeatherInput from "@/components/WeatherInput";
+import WeatherFields, { EMPTY_WEATHER, type WeatherData } from "@/components/WeatherFields";
 import { BASE_PATH } from "@/lib/basePath";
 
 interface UserOption {
@@ -31,6 +32,7 @@ export default function NewLiveRoundForm({
   const [datePlayed, setDatePlayed] = useState(() => new Date().toISOString().slice(0, 10));
   const [groupId, setGroupId] = useState("");
   const [weather, setWeather] = useState("");
+  const [weatherData, setWeatherData] = useState<WeatherData>(EMPTY_WEATHER);
   const [starting, setStarting] = useState(false);
 
   const available = users.filter((u) => !order.includes(u.id));
@@ -61,6 +63,7 @@ export default function NewLiveRoundForm({
           groupId: groupId || undefined,
           datePlayed,
           weatherConditions: weather || undefined,
+          ...weatherData,
         }),
       });
       const { round } = (await res.json()) as { round: { id: string } };
@@ -104,6 +107,8 @@ export default function NewLiveRoundForm({
         <label className="mb-1 block text-sm font-medium">Weather (optional)</label>
         <WeatherInput value={weather} onChange={setWeather} />
       </div>
+
+      <WeatherFields courseId={courseId} value={weatherData} onChange={setWeatherData} />
 
       <div>
         <label className="mb-1 block text-sm font-medium">Player turn order</label>

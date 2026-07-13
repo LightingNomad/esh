@@ -12,6 +12,8 @@ export async function PATCH(
   const { id } = await params;
   const body = (await req.json()) as {
     name: string;
+    latitude?: number | null;
+    longitude?: number | null;
     holes: {
       holeNumber: number;
       par: number;
@@ -21,7 +23,7 @@ export async function PATCH(
     }[];
   };
 
-  await updateCourse(id, body.name);
+  await updateCourse(id, body.name, body.latitude, body.longitude);
   if (body.holes?.length) {
     await setCourseHoles(id, body.holes);
   }

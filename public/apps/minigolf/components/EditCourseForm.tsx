@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import HoleEditorFields, { type HoleFormInput } from "@/components/HoleEditorFields";
+import CourseLocationFields from "@/components/CourseLocationFields";
 import { BASE_PATH } from "@/lib/basePath";
 import type { Course, Hole } from "@/lib/types";
 
@@ -15,6 +16,8 @@ export default function EditCourseForm({
 }) {
   const router = useRouter();
   const [name, setName] = useState(course.name);
+  const [latitude, setLatitude] = useState<number | null>(course.latitude);
+  const [longitude, setLongitude] = useState<number | null>(course.longitude);
   const [holes, setHoles] = useState<HoleFormInput[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -54,7 +57,7 @@ export default function EditCourseForm({
       await fetch(`${BASE_PATH}/api/courses/${course.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, holes }),
+        body: JSON.stringify({ name, latitude, longitude, holes }),
       });
       router.refresh();
       onDone();
@@ -73,6 +76,14 @@ export default function EditCourseForm({
         onChange={(e) => setName(e.target.value)}
         className="w-full rounded border border-black/20 px-3 py-2"
         required
+      />
+      <CourseLocationFields
+        latitude={latitude}
+        longitude={longitude}
+        onChange={(lat, lon) => {
+          setLatitude(lat);
+          setLongitude(lon);
+        }}
       />
       <HoleEditorFields
         holes={holes}

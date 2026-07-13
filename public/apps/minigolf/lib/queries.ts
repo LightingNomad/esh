@@ -59,19 +59,41 @@ export async function listUsers(): Promise<User[]> {
 
 // ---- courses ----
 
-export async function createCourse(name: string, createdByUserId: string): Promise<Course> {
+export async function createCourse(
+  name: string,
+  createdByUserId: string,
+  latitude?: number | null,
+  longitude?: number | null
+): Promise<Course> {
   const db = await getDB();
   const id = crypto.randomUUID();
   await db
-    .prepare(`INSERT INTO courses (id, name, created_by_user_id) VALUES (?1, ?2, ?3)`)
-    .bind(id, name, createdByUserId)
+    .prepare(
+      `INSERT INTO courses (id, name, created_by_user_id, latitude, longitude) VALUES (?1, ?2, ?3, ?4, ?5)`
+    )
+    .bind(id, name, createdByUserId, latitude ?? null, longitude ?? null)
     .run();
-  return { id, name, created_by_user_id: createdByUserId, created_at: new Date().toISOString() };
+  return {
+    id,
+    name,
+    created_by_user_id: createdByUserId,
+    created_at: new Date().toISOString(),
+    latitude: latitude ?? null,
+    longitude: longitude ?? null,
+  };
 }
 
-export async function updateCourse(courseId: string, name: string): Promise<void> {
+export async function updateCourse(
+  courseId: string,
+  name: string,
+  latitude?: number | null,
+  longitude?: number | null
+): Promise<void> {
   const db = await getDB();
-  await db.prepare(`UPDATE courses SET name = ?1 WHERE id = ?2`).bind(name, courseId).run();
+  await db
+    .prepare(`UPDATE courses SET name = ?1, latitude = ?2, longitude = ?3 WHERE id = ?4`)
+    .bind(name, latitude ?? null, longitude ?? null, courseId)
+    .run();
 }
 
 export async function deleteCourse(courseId: string): Promise<void> {
@@ -264,13 +286,23 @@ export async function createRound(round: {
   weatherConditions?: string | null;
   generalNotes?: string | null;
   completedAt?: string | null;
+  temperatureF?: number | null;
+  humidityPct?: number | null;
+  windSpeedMph?: number | null;
+  barometricPressureInHg?: number | null;
+  dewpointF?: number | null;
+  visibilityMi?: number | null;
+  heatIndexF?: number | null;
 }): Promise<Round> {
   const db = await getDB();
   const id = crypto.randomUUID();
   await db
     .prepare(
-      `INSERT INTO rounds (id, course_id, group_id, date_played, weather_conditions, general_notes, completed_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`
+      `INSERT INTO rounds (
+         id, course_id, group_id, date_played, weather_conditions, general_notes, completed_at,
+         temperature_f, humidity_pct, wind_speed_mph, barometric_pressure_inhg, dewpoint_f, visibility_mi, heat_index_f
+       )
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`
     )
     .bind(
       id,
@@ -279,7 +311,14 @@ export async function createRound(round: {
       round.datePlayed,
       round.weatherConditions ?? null,
       round.generalNotes ?? null,
-      round.completedAt ?? null
+      round.completedAt ?? null,
+      round.temperatureF ?? null,
+      round.humidityPct ?? null,
+      round.windSpeedMph ?? null,
+      round.barometricPressureInHg ?? null,
+      round.dewpointF ?? null,
+      round.visibilityMi ?? null,
+      round.heatIndexF ?? null
     )
     .run();
   return {
@@ -291,6 +330,13 @@ export async function createRound(round: {
     general_notes: round.generalNotes ?? null,
     completed_at: round.completedAt ?? null,
     created_at: new Date().toISOString(),
+    temperature_f: round.temperatureF ?? null,
+    humidity_pct: round.humidityPct ?? null,
+    wind_speed_mph: round.windSpeedMph ?? null,
+    barometric_pressure_inhg: round.barometricPressureInHg ?? null,
+    dewpoint_f: round.dewpointF ?? null,
+    visibility_mi: round.visibilityMi ?? null,
+    heat_index_f: round.heatIndexF ?? null,
   };
 }
 

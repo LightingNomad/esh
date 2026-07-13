@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json()) as {
     name: string;
+    latitude?: number | null;
+    longitude?: number | null;
     holes?: {
       holeNumber: number;
       par: number;
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "name is required" }, { status: 400 });
   }
 
-  const course = await createCourse(body.name, userId);
+  const course = await createCourse(body.name, userId, body.latitude, body.longitude);
   if (body.holes?.length) {
     await setCourseHoles(course.id, body.holes);
   }

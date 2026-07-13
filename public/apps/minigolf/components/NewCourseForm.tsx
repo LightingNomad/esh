@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import HoleEditorFields, { defaultHoles, type HoleFormInput } from "@/components/HoleEditorFields";
+import CourseLocationFields from "@/components/CourseLocationFields";
 import { BASE_PATH } from "@/lib/basePath";
 
 export default function NewCourseForm() {
@@ -10,6 +11,8 @@ export default function NewCourseForm() {
   const [name, setName] = useState("");
   const [holeCount, setHoleCount] = useState(18);
   const [holes, setHoles] = useState<HoleFormInput[]>(defaultHoles(18));
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -42,9 +45,11 @@ export default function NewCourseForm() {
       await fetch(`${BASE_PATH}/api/courses`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, holes }),
+        body: JSON.stringify({ name, latitude, longitude, holes }),
       });
       setName("");
+      setLatitude(null);
+      setLongitude(null);
       router.refresh();
     } finally {
       setSubmitting(false);
@@ -72,6 +77,15 @@ export default function NewCourseForm() {
           title="Number of holes"
         />
       </div>
+
+      <CourseLocationFields
+        latitude={latitude}
+        longitude={longitude}
+        onChange={(lat, lon) => {
+          setLatitude(lat);
+          setLongitude(lon);
+        }}
+      />
 
       <button
         type="button"

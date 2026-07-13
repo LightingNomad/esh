@@ -13,6 +13,8 @@ export interface Course {
   name: string;
   created_at: string;
   created_by_user_id: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface Hole {
@@ -49,6 +51,13 @@ export interface Round {
   general_notes: string | null;
   completed_at: string | null;
   created_at: string;
+  temperature_f: number | null;
+  humidity_pct: number | null;
+  wind_speed_mph: number | null;
+  barometric_pressure_inhg: number | null;
+  dewpoint_f: number | null;
+  visibility_mi: number | null;
+  heat_index_f: number | null;
 }
 
 export interface Score {

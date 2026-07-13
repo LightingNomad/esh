@@ -26,6 +26,13 @@ export async function POST(req: NextRequest) {
     weatherConditions?: string;
     generalNotes?: string;
     completed?: boolean;
+    temperatureF?: number | null;
+    humidityPct?: number | null;
+    windSpeedMph?: number | null;
+    barometricPressureInHg?: number | null;
+    dewpointF?: number | null;
+    visibilityMi?: number | null;
+    heatIndexF?: number | null;
   };
 
   if (!body.courseId || !body.datePlayed) {
@@ -42,6 +49,13 @@ export async function POST(req: NextRequest) {
     weatherConditions: body.weatherConditions,
     generalNotes: body.generalNotes,
     completedAt: body.completed ? new Date().toISOString() : undefined,
+    temperatureF: body.temperatureF,
+    humidityPct: body.humidityPct,
+    windSpeedMph: body.windSpeedMph,
+    barometricPressureInHg: body.barometricPressureInHg,
+    dewpointF: body.dewpointF,
+    visibilityMi: body.visibilityMi,
+    heatIndexF: body.heatIndexF,
   });
   return NextResponse.json({ round }, { status: 201 });
 }
