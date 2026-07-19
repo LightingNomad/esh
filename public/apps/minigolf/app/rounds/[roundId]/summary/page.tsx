@@ -57,6 +57,7 @@ export default async function RoundSummaryPage({
         <p className="text-sm text-black/60">
           {course?.name ?? "Unknown course"} — {round.date_played}
           {round.weather_conditions ? ` · ${round.weather_conditions}` : ""}
+          {round.weather_description ? ` · ${round.weather_description}` : ""}
           {" · Course par: "}
           {coursePar}
         </p>

@@ -130,6 +130,7 @@ export default async function SpreadsheetPage({
                 <span>
                   {courseName} — {round.date_played}
                   {round.weather_conditions ? ` · ${round.weather_conditions}` : ""}
+                  {round.weather_description ? ` · ${round.weather_description}` : ""}
                   {" · Course par: "}
                   {coursePar}
                   {!round.completed_at && " · In progress"}

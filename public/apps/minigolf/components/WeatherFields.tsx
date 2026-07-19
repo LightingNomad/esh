@@ -11,6 +11,7 @@ export interface WeatherData {
   dewpointF: number | null;
   visibilityMi: number | null;
   heatIndexF: number | null;
+  weatherDescription: string | null;
 }
 
 export const EMPTY_WEATHER: WeatherData = {
@@ -21,6 +22,7 @@ export const EMPTY_WEATHER: WeatherData = {
   dewpointF: null,
   visibilityMi: null,
   heatIndexF: null,
+  weatherDescription: null,
 };
 
 const FIELDS: { key: keyof WeatherData; label: string; step: number }[] = [
@@ -82,6 +84,9 @@ export default function WeatherFields({
         </button>
       </div>
       {error && <p className="text-xs text-red-600">{error}</p>}
+      {value.weatherDescription && (
+        <p className="text-sm text-black/70">NOAA conditions: {value.weatherDescription}</p>
+      )}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {FIELDS.map(({ key, label, step }) => (
           <div key={key}>

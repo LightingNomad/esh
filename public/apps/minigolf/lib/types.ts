@@ -50,6 +50,7 @@ export interface Round {
   group_id: string | null;
   date_played: string;
   weather_conditions: string | null;
+  weather_description: string | null;
   general_notes: string | null;
   completed_at: string | null;
   created_at: string;

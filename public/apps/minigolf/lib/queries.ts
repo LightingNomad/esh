@@ -339,6 +339,7 @@ export async function createRound(round: {
   groupId?: string | null;
   datePlayed: string;
   weatherConditions?: string | null;
+  weatherDescription?: string | null;
   generalNotes?: string | null;
   completedAt?: string | null;
   temperatureF?: number | null;
@@ -354,10 +355,10 @@ export async function createRound(round: {
   await db
     .prepare(
       `INSERT INTO rounds (
-         id, course_id, group_id, date_played, weather_conditions, general_notes, completed_at,
+         id, course_id, group_id, date_played, weather_conditions, weather_description, general_notes, completed_at,
          temperature_f, humidity_pct, wind_speed_mph, barometric_pressure_inhg, dewpoint_f, visibility_mi, heat_index_f
        )
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)`
     )
     .bind(
       id,
@@ -365,6 +366,7 @@ export async function createRound(round: {
       round.groupId ?? null,
       round.datePlayed,
       round.weatherConditions ?? null,
+      round.weatherDescription ?? null,
       round.generalNotes ?? null,
       round.completedAt ?? null,
       round.temperatureF ?? null,
@@ -382,6 +384,7 @@ export async function createRound(round: {
     group_id: round.groupId ?? null,
     date_played: round.datePlayed,
     weather_conditions: round.weatherConditions ?? null,
+    weather_description: round.weatherDescription ?? null,
     general_notes: round.generalNotes ?? null,
     completed_at: round.completedAt ?? null,
     created_at: new Date().toISOString(),

@@ -5,6 +5,13 @@
 const USER_AGENT = "minigolf-app (https://github.com/LightingNomad/esh)";
 const HEADERS = { "User-Agent": USER_AGENT, Accept: "application/geo+json" };
 
+// NOAA's station list is ordered by distance only, not by data quality or
+// uptime -- the single nearest station is sometimes a private/CWOP or
+// unmanned site that reports few or no fields, while an ASOS airport station
+// a bit further out reports everything. Try a few of the nearest candidates
+// and skip past any with no usable reading instead of trusting features[0].
+const MAX_STATION_CANDIDATES = 5;
+
 export interface WeatherConditions {
   temperatureF: number | null;
   humidityPct: number | null;
@@ -13,6 +20,7 @@ export interface WeatherConditions {
   dewpointF: number | null;
   visibilityMi: number | null;
   heatIndexF: number | null;
+  weatherDescription: string | null;
 }
 
 function celsiusToF(c: number | null | undefined): number | null {
@@ -39,6 +47,28 @@ async function fetchJson(url: string): Promise<unknown> {
   return res.json();
 }
 
+interface ObservationProperties {
+  temperature?: { value?: number | null };
+  relativeHumidity?: { value?: number | null };
+  windSpeed?: { value?: number | null };
+  barometricPressure?: { value?: number | null };
+  dewpoint?: { value?: number | null };
+  visibility?: { value?: number | null };
+  heatIndex?: { value?: number | null };
+  textDescription?: string | null;
+}
+
+async function fetchObservation(stationId: string): Promise<ObservationProperties | null> {
+  try {
+    const observation = (await fetchJson(
+      `https://api.weather.gov/stations/${stationId}/observations/latest`
+    )) as { properties?: ObservationProperties };
+    return observation.properties ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchCurrentWeather(
   latitude: number,
   longitude: number
@@ -53,23 +83,21 @@ export async function fetchCurrentWeather(
   const stations = (await fetchJson(stationsUrl)) as {
     features?: { properties?: { stationIdentifier?: string } }[];
   };
-  const stationId = stations.features?.[0]?.properties?.stationIdentifier;
-  if (!stationId) throw new Error("No nearby NOAA weather station found");
+  const candidates = (stations.features ?? [])
+    .map((f) => f.properties?.stationIdentifier)
+    .filter((id): id is string => Boolean(id));
+  if (candidates.length === 0) throw new Error("No nearby NOAA weather station found");
 
-  const observation = (await fetchJson(
-    `https://api.weather.gov/stations/${stationId}/observations/latest`
-  )) as {
-    properties?: {
-      temperature?: { value?: number | null };
-      relativeHumidity?: { value?: number | null };
-      windSpeed?: { value?: number | null };
-      barometricPressure?: { value?: number | null };
-      dewpoint?: { value?: number | null };
-      visibility?: { value?: number | null };
-      heatIndex?: { value?: number | null };
-    };
-  };
-  const p = observation.properties ?? {};
+  let p: ObservationProperties = {};
+  for (const stationId of candidates.slice(0, MAX_STATION_CANDIDATES)) {
+    const properties = await fetchObservation(stationId);
+    if (!properties) continue;
+    if (Object.keys(p).length === 0) p = properties; // keep as a fallback even if sparse
+    if (properties.temperature?.value != null) {
+      p = properties;
+      break;
+    }
+  }
 
   return {
     temperatureF: celsiusToF(p.temperature?.value),
@@ -79,5 +107,6 @@ export async function fetchCurrentWeather(
     dewpointF: celsiusToF(p.dewpoint?.value),
     visibilityMi: metersToMiles(p.visibility?.value),
     heatIndexF: celsiusToF(p.heatIndex?.value),
+    weatherDescription: p.textDescription || null,
   };
 }

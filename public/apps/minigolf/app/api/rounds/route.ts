@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     groupId?: string;
     datePlayed: string;
     weatherConditions?: string;
+    weatherDescription?: string | null;
     generalNotes?: string;
     completed?: boolean;
     temperatureF?: number | null;
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
     groupId: body.groupId,
     datePlayed: body.datePlayed,
     weatherConditions: body.weatherConditions,
+    weatherDescription: body.weatherDescription,
     generalNotes: body.generalNotes,
     completedAt: body.completed ? new Date().toISOString() : undefined,
     temperatureF: body.temperatureF,
