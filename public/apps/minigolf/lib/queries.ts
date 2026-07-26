@@ -81,6 +81,16 @@ export async function setUserRole(userId: string, role: UserRole): Promise<void>
   await db.prepare(`UPDATE users SET role = ?1 WHERE id = ?2`).bind(role, userId).run();
 }
 
+export async function getUserById(id: string): Promise<User | null> {
+  const db = await getDB();
+  return db.prepare(`SELECT * FROM users WHERE id = ?1`).bind(id).first<User>();
+}
+
+export async function updateUserName(userId: string, name: string): Promise<void> {
+  const db = await getDB();
+  await db.prepare(`UPDATE users SET name = ?1 WHERE id = ?2`).bind(name, userId).run();
+}
+
 /**
  * Refuses to delete a user who created any courses or groups, rather than
  * silently orphaning those rows (created_by_user_id is NOT NULL) or
@@ -401,6 +411,14 @@ export async function createRound(round: {
 export async function getRound(id: string): Promise<Round | null> {
   const db = await getDB();
   return db.prepare(`SELECT * FROM rounds WHERE id = ?1`).bind(id).first<Round>();
+}
+
+export async function updateRoundNotes(roundId: string, generalNotes: string | null): Promise<void> {
+  const db = await getDB();
+  await db
+    .prepare(`UPDATE rounds SET general_notes = ?1 WHERE id = ?2`)
+    .bind(generalNotes, roundId)
+    .run();
 }
 
 export async function completeRound(roundId: string): Promise<void> {

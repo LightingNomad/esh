@@ -1,6 +1,7 @@
 export interface PlayerTotal {
   label: string;
   total: number;
+  mulligans?: number;
   freeGame?: boolean;
 }
 
@@ -12,7 +13,8 @@ function formatDateMMDDYYYY(datePlayed: string): string {
 
 export function buildShareText(datePlayed: string, playerTotals: PlayerTotal[]): string {
   const lines = playerTotals.map(
-    (p) => `${p.label}: ${p.total}${p.freeGame ? "+Free Game" : ""}`
+    (p) =>
+      `${p.label}: ${p.total}${"*".repeat(p.mulligans ?? 0)}${p.freeGame ? "+Free Game" : ""}`
   );
   return `Mini Golf ${formatDateMMDDYYYY(datePlayed)} Score Update ⛳️:\n${lines.join("\n")}`;
 }

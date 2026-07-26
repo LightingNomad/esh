@@ -36,5 +36,13 @@ export default async function LiveRoundPage({
     return { id, label: nickname || user?.name || user?.email || id };
   });
 
-  return <LiveScorecard roundId={roundId} holes={holes} players={roster} initialScores={scores} />;
+  return (
+    <LiveScorecard
+      roundId={roundId}
+      holes={holes}
+      players={roster}
+      initialScores={scores}
+      initialNotes={round.general_notes}
+    />
+  );
 }

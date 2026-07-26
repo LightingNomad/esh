@@ -61,6 +61,9 @@ export default function RoundActions({
       <Link href={`/rounds/${roundId}/summary`} className="underline">
         View Summary
       </Link>
+      <Link href={`/rounds/${roundId}/edit`} className="underline">
+        Edit
+      </Link>
       <button
         onClick={handleDeleteRound}
         disabled={busy}

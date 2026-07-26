@@ -25,11 +25,13 @@ export default function LiveScorecard({
   holes,
   players,
   initialScores,
+  initialNotes,
 }: {
   roundId: string;
   holes: Hole[];
   players: Player[];
   initialScores: Score[];
+  initialNotes?: string | null;
 }) {
   const router = useRouter();
   const freeGameHole = holes.find((h) => h.is_free_game_hole);
@@ -37,6 +39,12 @@ export default function LiveScorecard({
     () => holes.map((h) => h.hole_number).sort((a, b) => a - b),
     [holes]
   );
+  const playedHoleNumbers = useMemo(
+    () => holeNumbers.filter((n) => !holes.find((h) => h.hole_number === n)?.is_free_game_hole),
+    [holeNumbers, holes]
+  );
+  const frontNineHoles = playedHoleNumbers.slice(0, 9);
+  const backNineHoles = playedHoleNumbers.slice(9, 18);
 
   const [currentHole, setCurrentHole] = useState(holeNumbers[0] ?? 1);
   const [scores, setScores] = useState<Record<string, ScoreEntry>>(() => {
@@ -52,6 +60,8 @@ export default function LiveScorecard({
   });
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [finishing, setFinishing] = useState(false);
+  const [notes, setNotes] = useState(initialNotes ?? "");
+  const [notesSaving, setNotesSaving] = useState(false);
 
   const currentHoleInfo = holes.find((h) => h.hole_number === currentHole);
   const isCurrentHoleFreeGame = Boolean(currentHoleInfo?.is_free_game_hole);
@@ -87,7 +97,7 @@ export default function LiveScorecard({
     const key = scoreKey(userId, holeNumber);
     setScores((prev) => {
       const current = prev[key] ?? {
-        strokeCount: 1,
+        strokeCount: 0,
         mulliganCount: 0,
         freeGameScored: false,
       };
@@ -95,6 +105,27 @@ export default function LiveScorecard({
       save(userId, holeNumber, next);
       return { ...prev, [key]: next };
     });
+  }
+
+  function sumStrokes(userId: string, holeNums: number[]) {
+    return holeNums.reduce(
+      (sum, n) => sum + (scores[scoreKey(userId, n)]?.strokeCount ?? 0),
+      0
+    );
+  }
+
+  async function saveNotes(value: string) {
+    setNotes(value);
+    setNotesSaving(true);
+    try {
+      await fetch(`${BASE_PATH}/api/rounds/${roundId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ generalNotes: value }),
+      });
+    } finally {
+      setNotesSaving(false);
+    }
   }
 
   async function handleFinish() {
@@ -118,6 +149,29 @@ export default function LiveScorecard({
         >
           {finishing ? "Finishing…" : "Finish Round"}
         </button>
+      </div>
+
+      <div className="mb-4 rounded-lg border border-black/10 p-3 text-sm">
+        <div className="mb-1 font-semibold">Running Total</div>
+        <div className="space-y-1">
+          {players.map((player) => {
+            const front = sumStrokes(player.id, frontNineHoles);
+            const back = sumStrokes(player.id, backNineHoles);
+            const total = front + back;
+            const freeGameDone = freeGameHole
+              ? Boolean(scores[scoreKey(player.id, freeGameHole.hole_number)]?.freeGameScored)
+              : false;
+            return (
+              <div key={player.id} className="flex items-center justify-between">
+                <span>{player.label}</span>
+                <span className="text-black/60">
+                  F9: {front} · B9: {back} · Tot: {total}
+                  {freeGameHole && ` · Free Game: ${freeGameDone ? "✓" : "—"}`}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
@@ -153,7 +207,7 @@ export default function LiveScorecard({
         {players.map((player) => {
           const key = scoreKey(player.id, currentHole);
           const entry = scores[key];
-          const strokeCount = entry?.strokeCount ?? 1;
+          const strokeCount = entry?.strokeCount ?? 0;
           const mulliganCount = entry?.mulliganCount ?? 0;
 
           return (
@@ -188,7 +242,7 @@ export default function LiveScorecard({
                     <button
                       onClick={() =>
                         updateEntry(player.id, currentHole, {
-                          strokeCount: Math.max(1, strokeCount - 1),
+                          strokeCount: Math.max(0, strokeCount - 1),
                         })
                       }
                       className="h-10 w-10 rounded-full bg-black/10 text-lg"
@@ -234,6 +288,20 @@ export default function LiveScorecard({
           );
         })}
       </ul>
+
+      <div className="mt-4">
+        <label className="mb-1 flex items-center justify-between text-sm font-medium">
+          <span>General notes</span>
+          {notesSaving && <span className="text-xs font-normal text-black/40">saving…</span>}
+        </label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          onBlur={(e) => saveNotes(e.target.value)}
+          className="w-full rounded border border-black/20 px-3 py-2 text-sm"
+          rows={2}
+        />
+      </div>
 
       {freeGameHole && (
         <p className="mt-4 text-center text-xs text-black/40">

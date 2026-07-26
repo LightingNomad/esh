@@ -15,6 +15,35 @@ export default function AdminUsersView({
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+
+  function startEdit(user: User) {
+    setEditingId(user.id);
+    setEditValue(user.name ?? "");
+    setError("");
+  }
+
+  async function saveName(user: User) {
+    if (!editValue.trim()) return;
+    setBusyId(user.id);
+    setError("");
+    try {
+      const res = await fetch(`${BASE_PATH}/api/admin/users/${user.id}/name`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editValue.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error((data as { error?: string }).error ?? "Failed to update name");
+      setEditingId(null);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update name");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function toggleRole(user: User) {
     const nextRole: UserRole = user.role === "admin" ? "user" : "admin";
@@ -73,8 +102,46 @@ export default function AdminUsersView({
               return (
                 <tr key={u.id}>
                   <td className="border border-black/10 p-2 font-medium">
-                    {u.name || <span className="text-black/40">—</span>}
-                    {isSelf && <span className="ml-1 text-xs text-black/40">(you)</span>}
+                    {editingId === u.id ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="w-28 rounded border border-black/20 px-1 py-0.5 text-sm font-normal"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => saveName(u)}
+                          disabled={busy}
+                          className="rounded bg-green-600 px-1.5 py-0.5 text-xs text-white disabled:opacity-50"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          disabled={busy}
+                          className="rounded bg-black/10 px-1.5 py-0.5 text-xs disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        {u.name || <span className="text-black/40">—</span>}
+                        {isSelf && <span className="ml-1 text-xs text-black/40">(you)</span>}
+                        {u.is_guest ? (
+                          <button
+                            type="button"
+                            onClick={() => startEdit(u)}
+                            className="ml-2 text-xs font-normal text-blue-600 underline"
+                          >
+                            Edit
+                          </button>
+                        ) : null}
+                      </>
+                    )}
                   </td>
                   <td className="border border-black/10 p-2">{u.email}</td>
                   <td className="border border-black/10 p-2">

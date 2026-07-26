@@ -280,7 +280,7 @@ export default function PostGameEntryForm({
                             <>
                               <input
                                 type="number"
-                                min={1}
+                                min={0}
                                 value={entry?.strokeCount ?? ""}
                                 onChange={(e) =>
                                   updateCell(userId, hole.hole_number, {

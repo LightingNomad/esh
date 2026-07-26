@@ -42,12 +42,13 @@ export default async function RoundSummaryPage({
   const playerTotals: PlayerTotal[] = playerIds.map((userId) => {
     const playerScores = scores.filter((s) => s.user_id === userId);
     const total = playerScores.reduce((sum, s) => sum + (s.stroke_count ?? 0), 0);
+    const mulligans = playerScores.reduce((sum, s) => sum + (s.mulligan_count ?? 0), 0);
     const freeGame = freeGameHole
       ? Boolean(
           playerScores.find((s) => s.hole_number === freeGameHole.hole_number)?.free_game_scored
         )
       : false;
-    return { label: labelFor(userId), total, freeGame };
+    return { label: labelFor(userId), total, mulligans, freeGame };
   });
 
   return (
@@ -90,6 +91,7 @@ export default async function RoundSummaryPage({
             <span className="font-medium">{p.label}</span>
             <span>
               {p.total}
+              {"*".repeat(p.mulligans ?? 0)}
               {p.freeGame ? " +Free Game" : ""}
               {" ("}
               {p.total - coursePar > 0 ? `+${p.total - coursePar}` : p.total - coursePar}
