@@ -299,6 +299,37 @@ export async function inviteMember(
   };
 }
 
+/**
+ * Adds a user straight into a group as an accepted member, skipping the
+ * pending-invite/accept flow — needed for guest users, who can't sign in to
+ * accept an email invite themselves but still need a group_members row to
+ * be eligible for a per-group nickname.
+ */
+export async function addGroupMember(groupId: string, userId: string): Promise<GroupMember> {
+  const db = await getDB();
+  const existing = await db
+    .prepare(`SELECT * FROM group_members WHERE group_id = ?1 AND user_id = ?2`)
+    .bind(groupId, userId)
+    .first<GroupMember>();
+  if (existing) return existing;
+
+  const id = crypto.randomUUID();
+  await db
+    .prepare(
+      `INSERT INTO group_members (id, group_id, user_id, status) VALUES (?1, ?2, ?3, 'accepted')`
+    )
+    .bind(id, groupId, userId)
+    .run();
+  return {
+    id,
+    group_id: groupId,
+    user_id: userId,
+    invited_email: null,
+    status: "accepted",
+    nickname: null,
+  };
+}
+
 export async function respondToInvite(
   memberId: string,
   userId: string,

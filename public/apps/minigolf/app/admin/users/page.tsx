@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { isAdmin, listGroupMembers, listGroups, listUsers } from "@/lib/queries";
 import AdminUsersView from "@/components/AdminUsersView";
 import GroupMembersEditor from "@/components/GroupMembersEditor";
+import AddGroupMemberForm from "@/components/AddGroupMemberForm";
 
 export default async function AdminUsersPage() {
   const { userId } = await auth();
@@ -22,16 +23,20 @@ export default async function AdminUsersPage() {
       <div>
         <h2 className="mb-2 text-lg font-semibold">Player Nicknames</h2>
         <ul className="space-y-2 divide-y divide-black/10 rounded-lg border border-black/10">
-          {groups.map((group, i) => (
-            <li key={group.id} className="space-y-2 p-3">
-              <span className="font-medium">{group.name}</span>
-              <GroupMembersEditor
-                groupId={group.id}
-                members={groupMembersByGroup[i]}
-                users={users}
-              />
-            </li>
-          ))}
+          {groups.map((group, i) => {
+            const members = groupMembersByGroup[i];
+            const memberUserIds = new Set(members.map((m) => m.user_id));
+            const guestCandidates = users.filter(
+              (u) => u.is_guest && !memberUserIds.has(u.id)
+            );
+            return (
+              <li key={group.id} className="space-y-2 p-3">
+                <span className="font-medium">{group.name}</span>
+                <GroupMembersEditor groupId={group.id} members={members} users={users} />
+                <AddGroupMemberForm groupId={group.id} candidates={guestCandidates} />
+              </li>
+            );
+          })}
           {groups.length === 0 && (
             <li className="p-3 text-sm text-black/60">No groups yet.</li>
           )}
