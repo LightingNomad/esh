@@ -257,6 +257,12 @@ export async function createGroup(name: string, createdByUserId: string): Promis
   return { id, name, created_by_user_id: createdByUserId };
 }
 
+export async function listGroups(): Promise<Group[]> {
+  const db = await getDB();
+  const { results } = await db.prepare(`SELECT * FROM groups ORDER BY name`).all<Group>();
+  return results;
+}
+
 export async function listGroupsForUser(userId: string): Promise<Group[]> {
   const db = await getDB();
   const { results } = await db

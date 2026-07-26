@@ -126,16 +126,21 @@ export default async function SpreadsheetPage({
           const playerIds = Array.from(new Set(scores.map((s) => s.user_id)));
           return (
             <div key={round.id} className="overflow-x-auto rounded-lg border border-black/10">
-              <div className="flex items-center justify-between border-b border-black/10 bg-black/5 p-2 text-sm font-medium">
-                <span>
-                  {courseName} — {round.date_played}
-                  {round.weather_conditions ? ` · ${round.weather_conditions}` : ""}
-                  {round.weather_description ? ` · ${round.weather_description}` : ""}
-                  {" · Course par: "}
-                  {coursePar}
-                  {!round.completed_at && " · In progress"}
-                </span>
-                <RoundActions roundId={round.id} />
+              <div className="border-b border-black/10 bg-black/5 p-2 text-sm">
+                <div className="flex items-center justify-between font-medium">
+                  <span>
+                    {courseName} — {round.date_played}
+                    {round.weather_conditions ? ` · ${round.weather_conditions}` : ""}
+                    {round.weather_description ? ` · ${round.weather_description}` : ""}
+                    {" · Course par: "}
+                    {coursePar}
+                    {!round.completed_at && " · In progress"}
+                  </span>
+                  <RoundActions roundId={round.id} />
+                </div>
+                {round.general_notes && (
+                  <p className="mt-1 text-xs italic text-black/60">{round.general_notes}</p>
+                )}
               </div>
               <table className="min-w-full border-collapse text-sm">
                 <thead>
