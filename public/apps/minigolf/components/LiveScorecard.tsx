@@ -238,6 +238,22 @@ export default function LiveScorecard({
                 </label>
               ) : (
                 <>
+                  <div className="mb-2 flex items-center justify-center gap-2">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => updateEntry(player.id, currentHole, { strokeCount: n })}
+                        className={`h-10 w-10 rounded-full text-sm font-semibold ${
+                          strokeCount === n
+                            ? "bg-green-600 text-white"
+                            : "bg-black/10"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="mb-2 flex items-center justify-center gap-4">
                     <button
                       onClick={() =>
