@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   CartesianGrid,
   Line,
@@ -34,6 +35,13 @@ interface HoleRecord {
   strokeCount: number;
 }
 
+interface RoundTotal {
+  roundId: string;
+  userId: string;
+  datePlayed: string;
+  total: number;
+}
+
 function label(u: UserOption) {
   return (u.name || u.email) + (u.is_guest ? " (guest)" : "");
 }
@@ -51,6 +59,9 @@ export default function AnalyticsView({
   const [scores, setScores] = useState<PlayerScore[]>([]);
   const [holeNumber, setHoleNumber] = useState(1);
   const [holeRecords, setHoleRecords] = useState<HoleRecord[]>([]);
+  const [totalsScope, setTotalsScope] = useState<"all" | "player">("all");
+  const [totalsSort, setTotalsSort] = useState<"asc" | "desc">("asc");
+  const [roundTotals, setRoundTotals] = useState<RoundTotal[]>([]);
 
   const userById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
   const holeByNumber = useMemo(
@@ -71,6 +82,15 @@ export default function AnalyticsView({
       .then((res) => res.json())
       .then((data) => setHoleRecords((data as { records: HoleRecord[] }).records));
   }, [courseId, holeNumber]);
+
+  useEffect(() => {
+    if (!courseId) return;
+    const params = new URLSearchParams({ sort: totalsSort });
+    if (totalsScope === "player" && playerId) params.set("player", playerId);
+    fetch(`${BASE_PATH}/api/courses/${courseId}/round-totals?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => setRoundTotals((data as { totals: RoundTotal[] }).totals));
+  }, [courseId, totalsScope, totalsSort, playerId]);
 
   const scoredHoles = useMemo(() => scores.filter((s) => s.stroke_count != null), [scores]);
 
@@ -126,6 +146,85 @@ export default function AnalyticsView({
             </option>
           ))}
         </select>
+      </div>
+
+      <div>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Best &amp; worst rounds</h2>
+          <div className="flex gap-2">
+            <div className="flex overflow-hidden rounded border border-black/20 text-sm">
+              <button
+                type="button"
+                onClick={() => setTotalsScope("all")}
+                className={`px-2 py-1 ${
+                  totalsScope === "all" ? "bg-black/10 font-medium" : ""
+                }`}
+              >
+                All players
+              </button>
+              <button
+                type="button"
+                onClick={() => setTotalsScope("player")}
+                className={`px-2 py-1 ${
+                  totalsScope === "player" ? "bg-black/10 font-medium" : ""
+                }`}
+              >
+                Selected player
+              </button>
+            </div>
+            <div className="flex overflow-hidden rounded border border-black/20 text-sm">
+              <button
+                type="button"
+                onClick={() => setTotalsSort("asc")}
+                className={`px-2 py-1 ${
+                  totalsSort === "asc" ? "bg-black/10 font-medium" : ""
+                }`}
+              >
+                Lowest first
+              </button>
+              <button
+                type="button"
+                onClick={() => setTotalsSort("desc")}
+                className={`px-2 py-1 ${
+                  totalsSort === "desc" ? "bg-black/10 font-medium" : ""
+                }`}
+              >
+                Highest first
+              </button>
+            </div>
+          </div>
+        </div>
+        {!courseId ? (
+          <p className="text-sm text-black/60">No course set up yet.</p>
+        ) : roundTotals.length === 0 ? (
+          <p className="text-sm text-black/60">
+            No complete rounds recorded yet{totalsScope === "player" ? " for this player" : ""}.
+          </p>
+        ) : (
+          <ol className="divide-y divide-black/10 rounded border border-black/10">
+            {roundTotals.slice(0, 10).map((r, i) => (
+              <li
+                key={`${r.roundId}-${r.userId}`}
+                className="flex items-center justify-between gap-2 px-3 py-2 text-sm"
+              >
+                <span className="flex items-center gap-2">
+                  <span className="w-5 text-black/40">{i + 1}.</span>
+                  {totalsScope === "all" && <span>{playerLabel(r.userId)}</span>}
+                  <span className="text-black/60">{r.datePlayed}</span>
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="font-semibold">{r.total}</span>
+                  <Link
+                    href={`/rounds/${r.roundId}/summary`}
+                    className="text-xs text-black/50 underline"
+                  >
+                    view
+                  </Link>
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
 
       <div>

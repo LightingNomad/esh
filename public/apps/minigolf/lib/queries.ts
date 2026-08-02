@@ -623,6 +623,48 @@ export async function listHoleScoreRecords(
   return results;
 }
 
+export interface RoundTotal {
+  roundId: string;
+  userId: string;
+  datePlayed: string;
+  total: number;
+}
+
+/**
+ * Full-round totals (all holes scored) for a course, best (lowest) or worst
+ * (highest) first — powers the analytics "best/worst rounds ever" leaderboard.
+ * Partial rounds are excluded so an unfinished round can't look like a record.
+ */
+export async function listRoundTotals(
+  courseId: string,
+  options: { userId?: string; sort?: "asc" | "desc" } = {}
+): Promise<RoundTotal[]> {
+  const db = await getDB();
+  const conditions = [`r.course_id = ?1`, `s.stroke_count IS NOT NULL`];
+  const params: unknown[] = [courseId];
+
+  if (options.userId) {
+    conditions.push(`s.user_id = ?${params.length + 1}`);
+    params.push(options.userId);
+  }
+
+  const direction = options.sort === "desc" ? "DESC" : "ASC";
+  const { results } = await db
+    .prepare(
+      `SELECT s.round_id as roundId, s.user_id as userId, r.date_played as datePlayed,
+              SUM(s.stroke_count) as total
+       FROM scores s
+       JOIN rounds r ON r.id = s.round_id
+       WHERE ${conditions.join(" AND ")}
+       GROUP BY s.round_id, s.user_id
+       HAVING COUNT(*) = (SELECT COUNT(*) FROM holes WHERE course_id = ?1)
+       ORDER BY total ${direction}, r.date_played ASC`
+    )
+    .bind(...params)
+    .all<RoundTotal>();
+  return results;
+}
+
 export async function listScoresForUser(
   userId: string,
   filters: { dateFrom?: string; dateTo?: string } = {}
