@@ -458,6 +458,14 @@ export async function updateRoundNotes(roundId: string, generalNotes: string | n
     .run();
 }
 
+export async function updateRoundDate(roundId: string, datePlayed: string): Promise<void> {
+  const db = await getDB();
+  await db
+    .prepare(`UPDATE rounds SET date_played = ?1 WHERE id = ?2`)
+    .bind(datePlayed, roundId)
+    .run();
+}
+
 export async function completeRound(roundId: string): Promise<void> {
   const db = await getDB();
   await db
@@ -657,7 +665,9 @@ export async function listRoundTotals(
        JOIN rounds r ON r.id = s.round_id
        WHERE ${conditions.join(" AND ")}
        GROUP BY s.round_id, s.user_id
-       HAVING COUNT(*) = (SELECT COUNT(*) FROM holes WHERE course_id = ?1)
+       HAVING COUNT(*) = (
+         SELECT COUNT(*) FROM holes WHERE course_id = ?1 AND is_free_game_hole = 0
+       )
        ORDER BY total ${direction}, r.date_played ASC`
     )
     .bind(...params)

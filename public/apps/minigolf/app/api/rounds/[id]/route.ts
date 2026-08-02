@@ -5,6 +5,7 @@ import {
   getRound,
   listHoles,
   listScoresForRound,
+  updateRoundDate,
   updateRoundNotes,
 } from "@/lib/queries";
 
@@ -35,8 +36,12 @@ export async function PATCH(
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const { generalNotes } = (await req.json()) as { generalNotes?: string | null };
+  const { generalNotes, datePlayed } = (await req.json()) as {
+    generalNotes?: string | null;
+    datePlayed?: string;
+  };
   await updateRoundNotes(id, generalNotes ?? null);
+  if (datePlayed) await updateRoundDate(id, datePlayed);
   return NextResponse.json({ ok: true });
 }
 

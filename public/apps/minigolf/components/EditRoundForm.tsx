@@ -32,16 +32,19 @@ export default function EditRoundForm({
   players,
   initialScores,
   initialNotes,
+  initialDatePlayed,
 }: {
   roundId: string;
   holes: Hole[];
   players: Player[];
   initialScores: Score[];
   initialNotes: string | null;
+  initialDatePlayed: string;
 }) {
   const router = useRouter();
   const holeNumbers = holes.map((h) => h.hole_number).sort((a, b) => a - b);
   const [notes, setNotes] = useState(initialNotes ?? "");
+  const [datePlayed, setDatePlayed] = useState(initialDatePlayed);
   const [cells, setCells] = useState<Record<string, CellEntry>>(() => {
     const map: Record<string, CellEntry> = {};
     for (const s of initialScores) {
@@ -117,7 +120,7 @@ export default function EditRoundForm({
         fetch(`${BASE_PATH}/api/rounds/${roundId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ generalNotes: notes }),
+          body: JSON.stringify({ generalNotes: notes, datePlayed }),
         }),
       ]);
 
@@ -129,6 +132,16 @@ export default function EditRoundForm({
 
   return (
     <div className="space-y-4">
+      <div>
+        <label className="mb-1 block text-sm font-medium">Date played</label>
+        <input
+          type="date"
+          value={datePlayed}
+          onChange={(e) => setDatePlayed(e.target.value)}
+          className="rounded border border-black/20 px-3 py-2"
+        />
+      </div>
+
       <div>
         <label className="mb-1 block text-sm font-medium">General notes</label>
         <textarea

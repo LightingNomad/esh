@@ -44,6 +44,7 @@ export default async function EditRoundPage({
         players={roster}
         initialScores={scores}
         initialNotes={round.general_notes}
+        initialDatePlayed={round.date_played}
       />
     </div>
   );
