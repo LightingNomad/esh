@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { href: "/", label: "Dashboard" },
   { href: "/spreadsheet", label: "Spreadsheet" },
   { href: "/analytics", label: "Analytics" },
+  { href: "/awards", label: "Awards" },
 ];
 
 const geistSans = Geist({

@@ -675,6 +675,81 @@ export async function listRoundTotals(
   return results;
 }
 
+export interface YearRoundTotal {
+  roundId: string;
+  userId: string;
+  datePlayed: string;
+  total: number;
+}
+
+/**
+ * Full-round totals (all non-free-game holes scored) for every course, for
+ * one calendar year — powers the Awards page, which aggregates across a
+ * whole year rather than a single course like listRoundTotals does. The
+ * "complete round" rule is the same, just re-checked per round via a
+ * correlated subquery since rounds here can belong to different courses.
+ */
+export async function listRoundTotalsForYear(year: string): Promise<YearRoundTotal[]> {
+  const db = await getDB();
+  const { results } = await db
+    .prepare(
+      `SELECT s.round_id as roundId, s.user_id as userId, r.date_played as datePlayed,
+              SUM(s.stroke_count) as total
+       FROM scores s
+       JOIN rounds r ON r.id = s.round_id
+       WHERE substr(r.date_played, 1, 4) = ?1 AND s.stroke_count IS NOT NULL
+       GROUP BY s.round_id, s.user_id
+       HAVING COUNT(*) = (
+         SELECT COUNT(*) FROM holes WHERE course_id = r.course_id AND is_free_game_hole = 0
+       )`
+    )
+    .bind(year)
+    .all<YearRoundTotal>();
+  return results;
+}
+
+export interface YearPlayerTotal {
+  userId: string;
+  total: number;
+}
+
+/**
+ * Total mulligans taken per player for a calendar year. Includes every
+ * player with at least one scored round that year (total is 0 if they never
+ * took one), so it also doubles as the Awards page's roster of "who played
+ * this year" for awards that need a zero-inclusive baseline (e.g. holes-in-one).
+ */
+export async function listMulliganTotalsForYear(year: string): Promise<YearPlayerTotal[]> {
+  const db = await getDB();
+  const { results } = await db
+    .prepare(
+      `SELECT s.user_id as userId, SUM(s.mulligan_count) as total
+       FROM scores s
+       JOIN rounds r ON r.id = s.round_id
+       WHERE substr(r.date_played, 1, 4) = ?1
+       GROUP BY s.user_id`
+    )
+    .bind(year)
+    .all<YearPlayerTotal>();
+  return results;
+}
+
+/** Total holes-in-one (stroke_count = 1) per player for a calendar year. Omits players with zero aces. */
+export async function listAceTotalsForYear(year: string): Promise<YearPlayerTotal[]> {
+  const db = await getDB();
+  const { results } = await db
+    .prepare(
+      `SELECT s.user_id as userId, COUNT(*) as total
+       FROM scores s
+       JOIN rounds r ON r.id = s.round_id
+       WHERE substr(r.date_played, 1, 4) = ?1 AND s.stroke_count = 1
+       GROUP BY s.user_id`
+    )
+    .bind(year)
+    .all<YearPlayerTotal>();
+  return results;
+}
+
 export async function listScoresForUser(
   userId: string,
   filters: { dateFrom?: string; dateTo?: string } = {}
