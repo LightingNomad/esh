@@ -134,6 +134,17 @@ export default function AwardsView({
     const bestEntries = best == null ? [] : allTotals.filter((r) => r.total === best);
     const worstEntries = worst == null ? [] : allTotals.filter((r) => r.total === worst);
 
+    const avgByUser: { userId: string; avg: number; rounds: number }[] = [];
+    for (const [userId, rounds] of totalsByUser) {
+      avgByUser.push({ userId, avg: average(rounds.map((r) => r.total)), rounds: rounds.length });
+    }
+    const minAvg = avgByUser.length ? Math.min(...avgByUser.map((a) => a.avg)) : null;
+    const maxAvg = avgByUser.length ? Math.max(...avgByUser.map((a) => a.avg)) : null;
+    const bestAverage =
+      minAvg == null ? [] : avgByUser.filter((a) => Math.abs(a.avg - minAvg) < 1e-9);
+    const worstAverage =
+      maxAvg == null ? [] : avgByUser.filter((a) => Math.abs(a.avg - maxAvg) < 1e-9);
+
     const stdevByUser: { userId: string; stdev: number; rounds: number }[] = [];
     for (const [userId, rounds] of totalsByUser) {
       const sd = stddev(rounds.map((r) => r.total));
@@ -211,6 +222,8 @@ export default function AwardsView({
     return {
       bestEntries,
       worstEntries,
+      bestAverage,
+      worstAverage,
       mostConsistent,
       leastConsistent,
       mostImproved,
@@ -267,6 +280,26 @@ export default function AwardsView({
                 winners={awards.worstEntries.map((r) => ({
                   userId: r.userId,
                   detail: `${r.total} — ${r.datePlayed}`,
+                }))}
+                playerLabel={playerLabel}
+                emptyText="No complete rounds this year."
+              />
+              <AwardCard
+                title="Best average score"
+                description="Lowest average round total"
+                winners={awards.bestAverage.map((a) => ({
+                  userId: a.userId,
+                  detail: `${a.avg.toFixed(1)} (${a.rounds} round${a.rounds === 1 ? "" : "s"})`,
+                }))}
+                playerLabel={playerLabel}
+                emptyText="No complete rounds this year."
+              />
+              <AwardCard
+                title="Worst average score"
+                description="Highest average round total"
+                winners={awards.worstAverage.map((a) => ({
+                  userId: a.userId,
+                  detail: `${a.avg.toFixed(1)} (${a.rounds} round${a.rounds === 1 ? "" : "s"})`,
                 }))}
                 playerLabel={playerLabel}
                 emptyText="No complete rounds this year."
