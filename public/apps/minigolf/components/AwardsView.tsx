@@ -27,6 +27,7 @@ interface AwardsResponse {
   previousRoundTotals: RoundTotalEntry[];
   mulligans: PlayerTotalEntry[];
   aces: PlayerTotalEntry[];
+  freeGames: PlayerTotalEntry[];
 }
 
 interface Winner {
@@ -194,6 +195,19 @@ export default function AwardsView({
     const mostAces =
       maxAces == null || maxAces === 0 ? [] : aceRoster.filter((a) => a.total === maxAces);
 
+    const minFreeGames = data.freeGames.length
+      ? Math.min(...data.freeGames.map((f) => f.total))
+      : null;
+    const maxFreeGames = data.freeGames.length
+      ? Math.max(...data.freeGames.map((f) => f.total))
+      : null;
+    const leastFreeGames =
+      minFreeGames == null ? [] : data.freeGames.filter((f) => f.total === minFreeGames);
+    const mostFreeGames =
+      maxFreeGames == null || maxFreeGames === 0
+        ? []
+        : data.freeGames.filter((f) => f.total === maxFreeGames);
+
     return {
       bestEntries,
       worstEntries,
@@ -205,6 +219,8 @@ export default function AwardsView({
       mostMulligans,
       leastAces,
       mostAces,
+      leastFreeGames,
+      mostFreeGames,
     };
   }, [data]);
 
@@ -344,6 +360,26 @@ export default function AwardsView({
                 title="Fewest holes-in-one"
                 description="Among players with a scored round this year"
                 winners={awards.leastAces.map((a) => ({ userId: a.userId, detail: `${a.total}` }))}
+                playerLabel={playerLabel}
+                emptyText="No data yet."
+              />
+              <AwardCard
+                title="Most free games scored"
+                description="Total free games this year"
+                winners={awards.mostFreeGames.map((f) => ({
+                  userId: f.userId,
+                  detail: `${f.total}`,
+                }))}
+                playerLabel={playerLabel}
+                emptyText="No free games scored this year."
+              />
+              <AwardCard
+                title="Fewest free games scored"
+                description="Among players with a scored round this year"
+                winners={awards.leastFreeGames.map((f) => ({
+                  userId: f.userId,
+                  detail: `${f.total}`,
+                }))}
                 playerLabel={playerLabel}
                 emptyText="No data yet."
               />

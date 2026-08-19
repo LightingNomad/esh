@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import {
   listAceTotalsForYear,
+  listFreeGameTotalsForYear,
   listMulliganTotalsForYear,
   listRoundTotalsForYear,
 } from "@/lib/queries";
@@ -16,12 +17,13 @@ export async function GET(req: NextRequest) {
   }
   const previousYear = String(Number(year) - 1);
 
-  const [roundTotals, previousRoundTotals, mulligans, aces] = await Promise.all([
+  const [roundTotals, previousRoundTotals, mulligans, aces, freeGames] = await Promise.all([
     listRoundTotalsForYear(year),
     listRoundTotalsForYear(previousYear),
     listMulliganTotalsForYear(year),
     listAceTotalsForYear(year),
+    listFreeGameTotalsForYear(year),
   ]);
 
-  return NextResponse.json({ roundTotals, previousRoundTotals, mulligans, aces });
+  return NextResponse.json({ roundTotals, previousRoundTotals, mulligans, aces, freeGames });
 }

@@ -734,6 +734,26 @@ export async function listMulliganTotalsForYear(year: string): Promise<YearPlaye
   return results;
 }
 
+/**
+ * Total free games scored per player for a calendar year. Includes every
+ * player with at least one scored round that year (total is 0 if they never
+ * scored one), same zero-inclusive roster semantics as listMulliganTotalsForYear.
+ */
+export async function listFreeGameTotalsForYear(year: string): Promise<YearPlayerTotal[]> {
+  const db = await getDB();
+  const { results } = await db
+    .prepare(
+      `SELECT s.user_id as userId, SUM(s.free_game_scored) as total
+       FROM scores s
+       JOIN rounds r ON r.id = s.round_id
+       WHERE substr(r.date_played, 1, 4) = ?1
+       GROUP BY s.user_id`
+    )
+    .bind(year)
+    .all<YearPlayerTotal>();
+  return results;
+}
+
 /** Total holes-in-one (stroke_count = 1) per player for a calendar year. Omits players with zero aces. */
 export async function listAceTotalsForYear(year: string): Promise<YearPlayerTotal[]> {
   const db = await getDB();
