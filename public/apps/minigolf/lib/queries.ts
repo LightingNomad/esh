@@ -734,6 +734,33 @@ export async function listMulliganTotalsForYear(year: string): Promise<YearPlaye
   return results;
 }
 
+export interface YearRoundMulligans {
+  roundId: string;
+  userId: string;
+  mulligans: number;
+}
+
+/**
+ * Mulligans taken per (round, player) for a calendar year — lets the Awards
+ * page identify "tournament rounds" (mulligan-free) among the complete
+ * rounds returned by listRoundTotalsForYear. Not restricted to complete
+ * rounds itself; callers join against listRoundTotalsForYear by roundId+userId.
+ */
+export async function listRoundMulligansForYear(year: string): Promise<YearRoundMulligans[]> {
+  const db = await getDB();
+  const { results } = await db
+    .prepare(
+      `SELECT s.round_id as roundId, s.user_id as userId, SUM(s.mulligan_count) as mulligans
+       FROM scores s
+       JOIN rounds r ON r.id = s.round_id
+       WHERE substr(r.date_played, 1, 4) = ?1
+       GROUP BY s.round_id, s.user_id`
+    )
+    .bind(year)
+    .all<YearRoundMulligans>();
+  return results;
+}
+
 /**
  * Total free games scored per player for a calendar year. Includes every
  * player with at least one scored round that year (total is 0 if they never

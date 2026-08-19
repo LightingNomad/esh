@@ -4,6 +4,7 @@ import {
   listAceTotalsForYear,
   listFreeGameTotalsForYear,
   listMulliganTotalsForYear,
+  listRoundMulligansForYear,
   listRoundTotalsForYear,
 } from "@/lib/queries";
 
@@ -17,13 +18,22 @@ export async function GET(req: NextRequest) {
   }
   const previousYear = String(Number(year) - 1);
 
-  const [roundTotals, previousRoundTotals, mulligans, aces, freeGames] = await Promise.all([
-    listRoundTotalsForYear(year),
-    listRoundTotalsForYear(previousYear),
-    listMulliganTotalsForYear(year),
-    listAceTotalsForYear(year),
-    listFreeGameTotalsForYear(year),
-  ]);
+  const [roundTotals, previousRoundTotals, mulligans, roundMulligans, aces, freeGames] =
+    await Promise.all([
+      listRoundTotalsForYear(year),
+      listRoundTotalsForYear(previousYear),
+      listMulliganTotalsForYear(year),
+      listRoundMulligansForYear(year),
+      listAceTotalsForYear(year),
+      listFreeGameTotalsForYear(year),
+    ]);
 
-  return NextResponse.json({ roundTotals, previousRoundTotals, mulligans, aces, freeGames });
+  return NextResponse.json({
+    roundTotals,
+    previousRoundTotals,
+    mulligans,
+    roundMulligans,
+    aces,
+    freeGames,
+  });
 }
