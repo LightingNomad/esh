@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Build a printable cue list of Special Focus preset channels from an ETC Eos ASCII console export.">
+  <title>Special Focus Cue List - Edward S. Hansen</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <link rel="shortcut icon" type="image/x-icon" href="./assets/favicon.ico">
+  <link rel="mask-icon" href="https://lightingnomad.github.io/edward-hansen/images/favicon.ico" color="#000000">
+</head>
+
+<style>
+  .drop-zone {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    background: #fff;
+    cursor: pointer;
+    transition: 0.2s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .drop-zone.dragover {
+    background-color: #e9ecef;
+    border-color: #0d6efd;
+  }
+
+  .rounded-4 {
+    border: none !important;
+  }
+
+  .preset-list {
+    max-height: 520px;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 10px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.85rem;
+  }
+
+  .preset-item {
+    padding-top: 0.3rem !important;
+    padding-bottom: 0.3rem !important;
+  }
+
+  .preset-item:last-child {
+    border-bottom: none !important;
+  }
+
+  .cue-block {
+    margin-bottom: 0.4rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+
+  #cueListOutput {
+    font-size: 0.85rem;
+  }
+
+  .part-block {
+    border-left: 3px solid #dee2e6;
+    padding-left: 0.6rem;
+    margin-top: 0.2rem;
+    margin-left: 0.25rem;
+    font-size: 0.8rem;
+  }
+
+  .preset-tag {
+    background: #fff3cd;
+    border: 1px solid #ffe69c;
+    border-radius: 6px;
+    padding: 0.15rem 0.45rem;
+    margin: 0.1rem 0.25rem 0.1rem 0;
+    display: inline-block;
+    font-size: 0.8rem;
+  }
+
+  .ch-num {
+    font-weight: 700;
+    font-size: 1.15em;
+  }
+
+  #statusLine {
+    white-space: pre-line;
+  }
+
+  @media print {
+
+    nav,
+    footer,
+    #uploadPanel,
+    #fixtureTypePanel,
+    #presetPanel,
+    .no-print {
+      display: none !important;
+    }
+
+    body {
+      background: #fff !important;
+    }
+
+    .bg-light {
+      background: #fff !important;
+    }
+
+    #resultPanel .rounded-4 {
+      padding: 0 !important;
+    }
+
+    .cue-block {
+      page-break-inside: avoid;
+    }
+  }
+</style>
+
+<body class="bg-white">
+
+  <main>
+    <div class="container">
+      <header>
+        <nav
+          class="navbar bg-light p-4 mt-3 rounded-4 justify-content-center justify-content-sm-center justify-content-md-between">
+          <a class="navbar-brand" href="./">
+            <img src="./assets/ESH-Lighting-Logo.svg" width="" height="75" class="d-inline-block align-top"
+              alt="ESH Lighting Logo">
+          </a>
+          <ul class="nav nav-pills justify-content-center">
+            <li class="nav-item"><a href="./" class="nav-link">Home</a></li>
+            <li class="nav-item"><a href="./work" class="nav-link">Work</a></li>
+            <li class="nav-item"><a href="./about" class="nav-link">About</a></li>
+            <li class="nav-item"><a href="./resume" class="nav-link">Resume</a></li>
+            <li class="nav-item"><a href="./contact" class="nav-link">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
+    </div>
+
+    <!-- Panel 1: Upload + settings -->
+    <div class="container mt-3" id="uploadPanel">
+      <div class="bg-light rounded-4 p-4">
+        <div class="row justify-content-center mb-4 text-center text-md-start">
+          <div class="col-12 col-lg-8">
+            <span class="fs-3 fw-bold">Special Focus Cue List</span><br>
+            <span class="text-muted">Upload an EOS Console Moving Light Assistant CSV export to pull
+              cue-by-cue channel lists for presets you flag as "Special Focus".</span>
+          </div>
+        </div>
+
+        <div class="row justify-content-center g-3">
+          <div class="col-12 col-md-5">
+            <div id="dropConsole" class="drop-zone">
+              <span class="fw-bold">Eos Console CSV</span><br>
+              <span id="infoConsole" class="text-muted small">Drop here or click (required)</span>
+            </div>
+          </div>
+          <div class="col-12 col-md-5">
+            <div id="dropFlags" class="drop-zone">
+              <span class="fw-bold">Special Focus Flags CSV</span><br>
+              <span id="infoFlags" class="text-muted small">Optional — resume a previous session</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="row justify-content-center g-3 mt-1">
+          <div class="col-12 col-md-8">
+            <button onclick="parseConsoleFile()" class="btn btn-primary w-100 py-2 fw-bold">Parse Show
+              File</button>
+          </div>
+        </div>
+
+        <div class="row justify-content-center mt-3">
+          <div class="col-12 col-md-8 text-center">
+            <span id="statusLine" class="text-muted small"></span>
+          </div>
+        </div>
+
+        <div class="row justify-content-center g-3 mt-2" id="settingsRow" style="display:none;">
+          <div class="col-12 col-md-5">
+            <label for="cueListSelect" class="form-label small fw-bold mb-1">Main Cue List</label>
+            <select id="cueListSelect" class="form-select"></select>
+          </div>
+          <div class="col-12 col-md-5">
+            <label for="minIntensity" class="form-label small fw-bold mb-1">Minimum "On" Intensity (%)</label>
+            <input type="number" id="minIntensity" class="form-control" value="1" min="0" max="100" step="1">
+          </div>
+          <div class="col-12 col-md-8">
+            <button onclick="renderPresetPanel()" class="btn btn-outline-primary w-100 py-2 fw-bold">Load /
+              Refresh Used Presets</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 1.5: Fixture Type filter -->
+    <div class="container mt-3" id="fixtureTypePanel" style="display:none;">
+      <div class="bg-light rounded-4 p-4">
+        <div class="row justify-content-center mb-3 text-center text-md-start">
+          <div class="col-12 col-lg-8">
+            <span class="fs-4 fw-bold">Filter by Fixture Type</span><br>
+            <span class="text-muted small">Only channels of the checked fixture types count toward used
+              presets and the cue list — uncheck pixel-mapping/LED-strip/etc. fixture types you don't care
+              about here. Click "Load / Refresh Used Presets" above after changing this.</span>
+          </div>
+        </div>
+        <div class="row justify-content-center g-2 mb-2">
+          <div class="col-6 col-md-3">
+            <button class="btn btn-outline-secondary btn-sm w-100" onclick="setAllFixtureTypeChecks(true)">Select
+              All</button>
+          </div>
+          <div class="col-6 col-md-3">
+            <button class="btn btn-outline-secondary btn-sm w-100" onclick="setAllFixtureTypeChecks(false)">Clear
+              All</button>
+          </div>
+        </div>
+        <div class="row justify-content-center">
+          <div class="col-12 col-md-10">
+            <div id="fixtureTypeList" class="preset-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 2: Special Focus preset flagging -->
+    <div class="container mt-3" id="presetPanel" style="display:none;">
+      <div class="bg-light rounded-4 p-4">
+        <div class="row justify-content-center mb-3 text-center text-md-start">
+          <div class="col-12 col-lg-8">
+            <span class="fs-4 fw-bold">Flag Special Focus Presets</span><br>
+            <span id="presetSubtitle" class="text-muted small"></span>
+          </div>
+        </div>
+
+        <div class="row justify-content-center g-2 mb-2">
+          <div class="col-12 col-md-8">
+            <input type="text" id="presetSearch" class="form-control" placeholder="Filter by preset number or name…"
+              oninput="filterPresetList()">
+          </div>
+        </div>
+
+        <div class="row justify-content-center g-2 mb-3">
+          <div class="col-6 col-md-4">
+            <button class="btn btn-outline-secondary btn-sm w-100" onclick="setAllPresetChecks(true)">Select
+              All (Filtered)</button>
+          </div>
+          <div class="col-6 col-md-4">
+            <button class="btn btn-outline-secondary btn-sm w-100" onclick="setAllPresetChecks(false)">Clear
+              All (Filtered)</button>
+          </div>
+        </div>
+
+        <div class="row justify-content-center">
+          <div class="col-12 col-md-10">
+            <div id="presetList" class="preset-list"></div>
+          </div>
+        </div>
+
+        <div class="row justify-content-center g-3 mt-3">
+          <div class="col-12 col-md-5">
+            <button onclick="exportFlagsCsv()" class="btn btn-outline-secondary w-100 py-2 fw-bold">Export
+              Special Focus Flags (CSV)</button>
+          </div>
+          <div class="col-12 col-md-5">
+            <button onclick="generateCueList()" class="btn btn-primary w-100 py-2 fw-bold">Generate Cue
+              List</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 3: Results -->
+    <div class="container mt-3 mb-4" id="resultPanel" style="display:none;">
+      <div class="bg-light rounded-4 p-4">
+        <div
+          class="row justify-content-center mb-3 align-items-center text-center text-md-start no-print">
+          <div class="col-12 col-md-6">
+            <span class="fs-4 fw-bold">Cue List</span><br>
+            <span id="resultSubtitle" class="text-muted small"></span>
+          </div>
+          <div class="col-12 col-md-6 mt-2 mt-md-0">
+            <div class="form-check form-switch d-inline-block me-3">
+              <input class="form-check-input" type="checkbox" id="onlyWithData" checked
+                onchange="renderCueList()">
+              <label class="form-check-label small" for="onlyWithData">Only show cues with Special Focus
+                lights</label>
+            </div>
+            <div class="form-check form-switch d-inline-block">
+              <input class="form-check-input" type="checkbox" id="firstUseOnly"
+                onchange="refreshCueList()">
+              <label class="form-check-label small" for="firstUseOnly">Show First Used Cues Only
+                <span class="text-muted d-block" style="font-size:0.75rem;">Show a channel in a preset only
+                  the first time it's ever used in the list — never again after that, even if it recurs
+                  later.</span></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row justify-content-center g-2 mb-3 no-print">
+          <div class="col-6 col-md-3">
+            <button class="btn btn-outline-secondary w-100 fw-bold" onclick="window.print()">Print</button>
+          </div>
+          <div class="col-6 col-md-3">
+            <button class="btn btn-outline-secondary w-100 fw-bold" onclick="exportCueListCsv()">Export CSV</button>
+          </div>
+        </div>
+
+        <div id="cueListOutput"></div>
+      </div>
+    </div>
+
+    <footer class="container mt-3 no-print">
+      <div class="bg-light px-4 rounded-4">
+        <p class="py-3 mb-0">&copy; Edward S. Hansen
+          <script>document.write(new Date().getFullYear())</script>
+        </p>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    /* ============================================================
+       File intake (drag/drop + click, matching cuelistcompare.html)
+       ============================================================ */
+    let rawConsoleText = null;
+    let rawFlagsText = null;
+
+    setupDropZone('dropConsole', (file) => handleConsoleFile(file));
+    setupDropZone('dropFlags', (file) => handleFlagsFile(file));
+
+    function setupDropZone(id, onFile) {
+      const zone = document.getElementById(id);
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        onFile(e.dataTransfer.files[0]);
+      });
+      zone.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file'; input.accept = '.csv';
+        input.onchange = _ => onFile(input.files[0]);
+        input.click();
+      });
+    }
+
+    function handleConsoleFile(file) {
+      if (!file) return;
+      document.getElementById('infoConsole').innerText = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => { rawConsoleText = e.target.result; };
+      reader.readAsText(file);
+    }
+
+    function handleFlagsFile(file) {
+      if (!file) return;
+      document.getElementById('infoFlags').innerText = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        rawFlagsText = e.target.result;
+        importFlagsCsv(rawFlagsText);
+      };
+      reader.readAsText(file);
+    }
+
+    /* ============================================================
+       CSV field parsing helpers
+       ============================================================ */
+    // Fast, non-quote-aware split — safe only for the LEVELS section,
+    // where every field is a plain number/enum with no embedded commas.
+    function splitSimple(line) {
+      return line.split(',');
+    }
+
+    // Quote-aware parser for sections that can contain free-text labels
+    // and notes with embedded commas/quotes (TARGETS, CHANNELS).
+    function parseCsvLine(line) {
+      const result = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (inQuotes) {
+          if (c === '"') {
+            if (line[i + 1] === '"') { cur += '"'; i++; }
+            else { inQuotes = false; }
+          } else {
+            cur += c;
+          }
+        } else {
+          if (c === '"') inQuotes = true;
+          else if (c === ',') { result.push(cur); cur = ''; }
+          else cur += c;
+        }
+      }
+      result.push(cur);
+      return result;
+    }
+
+    function toCsvField(v) {
+      v = (v === undefined || v === null) ? '' : String(v);
+      if (/[",\r\n]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"';
+      return v;
+    }
+
+    function downloadText(filename, text) {
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    /* ============================================================
+       Eos ASCII export parsing
+       ============================================================
+       The file is a sequence of START_<SECTION> / END_<SECTION>
+       blocks, each with its own header row. We only need three:
+         - TARGETS : Cue_List labels, Cue labels/notes/parts/BLOCK flag,
+                     Preset labels
+         - LEVELS  : per-channel data recorded in each cue. A Preset
+                     almost never carries intensity — it carries the
+                     non-intensity parameters (pan/tilt/zoom/color/edge/
+                     etc). So we pull two separate streams out of this
+                     section:
+                       1) every raw Intens row for a channel in a cue
+                          (whatever it's sourced from — an Intensity
+                          Palette, a Sub, or just a recorded absolute
+                          level — we don't care, we just want the number)
+                       2) every non-Intens row whose value came from a
+                          Preset, which tells us "this channel is running
+                          Preset P as of this cue"
+                     Neither stream alone tells you whether a preset's
+                     channel is actually lit — Eos only writes a row for
+                     a channel/parameter when it CHANGES in that cue, and
+                     the value then tracks forward through every later
+                     cue until something changes it again. So this file
+                     alone can't answer "what preset is a channel using
+                     right now, and is it above the intensity floor" —
+                     that requires replaying the whole cue list in order
+                     per channel (see computeTracked below).
+         - CHANNELS: channel number -> fixture label
+       Everything else (FIXTURES, SHOWCONTROL, PIXELMAP, etc.) is
+       skipped without allocating anything.
+    */
+    let parsedData = null;
+
+    function parseEosFile(text) {
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      const lines = text.split(/\r\n|\r|\n/);
+
+      let section = null;
+      let expectingHeader = false;
+      let headerIdx = null;
+
+      const cueLists = new Map();        // listNum -> label
+      const cuesByList = new Map();      // listNum -> Map(cueId -> {id, listNum, block, parts:[{part,label,notes}]})
+      const presets = new Map();         // presetId -> label
+      const channels = new Map();        // channel -> {label, fixtureType}
+      const intensRows = [];             // {listNum, cueId, channel, level} — raw recorded intensity, any source
+      const presetRefRows = [];          // {listNum, cueId, channel, presetId} — non-Intens param sourced from a Preset
+
+      for (let idx = 0; idx < lines.length; idx++) {
+        const raw = lines[idx];
+        if (raw === '') continue;
+
+        if (raw.startsWith('START_')) {
+          section = raw.slice(6).trim();
+          expectingHeader = true;
+          headerIdx = null;
+          continue;
+        }
+        if (raw.startsWith('END_')) {
+          section = null;
+          headerIdx = null;
+          continue;
+        }
+        if (!section) continue;
+
+        if (expectingHeader) {
+          const cols = (section === 'LEVELS') ? splitSimple(raw) : parseCsvLine(raw);
+          headerIdx = {};
+          cols.forEach((name, i) => { headerIdx[name.trim()] = i; });
+          expectingHeader = false;
+          continue;
+        }
+
+        if (section === 'LEVELS') {
+          const cols = splitSimple(raw);
+          if (cols[headerIdx['TARGET_TYPE_AS_TEXT']] !== 'Cue') continue;
+          const part = (cols[headerIdx['TARGET_PART_NUMBER']] || '').trim();
+          if (part === '20') continue; // reserved "Mark" pseudo-part, not real cue data
+          const listNum = (cols[headerIdx['TARGET_LIST_NUMBER']] || '').trim();
+          const cueId = (cols[headerIdx['TARGET_ID']] || '').trim();
+          const channel = (cols[headerIdx['CHANNEL']] || '').trim();
+          const paramType = cols[headerIdx['PARAMETER_TYPE_AS_TEXT']];
+          if (paramType === 'Intens') {
+            const level = parseFloat(cols[headerIdx['LEVEL']]);
+            if (isNaN(level)) continue;
+            intensRows.push({ listNum, cueId, channel, level });
+          } else if (cols[headerIdx['LEVEL_REFERENCE_TYPE_AS_TEXT']] === 'Preset') {
+            const presetId = (cols[headerIdx['LEVEL_REFERENCE_ID']] || '').trim();
+            presetRefRows.push({ listNum, cueId, channel, presetId, part });
+          }
+        } else if (section === 'TARGETS') {
+          const cols = parseCsvLine(raw);
+          const type = cols[headerIdx['TARGET_TYPE_AS_TEXT']];
+          if (type === 'Cue_List') {
+            const id = (cols[headerIdx['TARGET_ID']] || '').trim();
+            cueLists.set(id, cols[headerIdx['LABEL']] || '');
+          } else if (type === 'Preset') {
+            const id = (cols[headerIdx['TARGET_ID']] || '').trim();
+            presets.set(id, cols[headerIdx['LABEL']] || ('Preset ' + id));
+          } else if (type === 'Cue') {
+            const listNum = (cols[headerIdx['TARGET_LIST_NUMBER']] || '').trim();
+            const cueId = (cols[headerIdx['TARGET_ID']] || '').trim();
+            const part = (cols[headerIdx['PART_NUMBER']] || '').trim();
+            if (part === '20') continue; // reserved "Mark" pseudo-part, not real cue data
+            if (!cuesByList.has(listNum)) cuesByList.set(listNum, new Map());
+            const cm = cuesByList.get(listNum);
+            if (!cm.has(cueId)) cm.set(cueId, { id: cueId, listNum: listNum, block: false, parts: [] });
+            const cue = cm.get(cueId);
+            if ('BLOCK' in headerIdx && (cols[headerIdx['BLOCK']] || '').trim()) cue.block = true;
+            cue.parts.push({
+              part: part,
+              label: cols[headerIdx['LABEL']] || '',
+              notes: cols[headerIdx['CUE_NOTES']] || '',
+            });
+          }
+        } else if (section === 'CHANNELS') {
+          const cols = parseCsvLine(raw);
+          const ch = (cols[headerIdx['CHANNEL']] || '').trim();
+          if (ch && !channels.has(ch)) {
+            channels.set(ch, {
+              label: cols[headerIdx['LABEL']] || '',
+              fixtureType: cols[headerIdx['FIXTURE_TYPE']] || '',
+            });
+          }
+        }
+      }
+
+      return { cueLists, cuesByList, presets, channels, intensRows, presetRefRows };
+    }
+
+    function parseConsoleFile() {
+      if (!rawConsoleText) { alert('Please upload the Eos console CSV first.'); return; }
+      const statusEl = document.getElementById('statusLine');
+      statusEl.innerText = 'Parsing show file… this can take a few seconds for large exports.';
+      document.getElementById('fixtureTypePanel').style.display = 'none';
+      document.getElementById('presetPanel').style.display = 'none';
+      document.getElementById('resultPanel').style.display = 'none';
+
+      // Let the status text paint before the (synchronous, potentially
+      // multi-second) parse of a large ASCII export runs.
+      setTimeout(() => {
+        try {
+          parsedData = parseEosFile(rawConsoleText);
+        } catch (err) {
+          statusEl.innerText = 'Could not parse that file: ' + err.message;
+          return;
+        }
+
+        const listIds = new Set([...parsedData.cueLists.keys(), ...parsedData.cuesByList.keys()]);
+        const select = document.getElementById('cueListSelect');
+        select.innerHTML = [...listIds]
+          .sort((a, b) => parseFloat(a) - parseFloat(b))
+          .map(id => {
+            const label = parsedData.cueLists.get(id) || '';
+            const count = parsedData.cuesByList.has(id) ? parsedData.cuesByList.get(id).size : 0;
+            const text = `${id}${label ? ' — ' + label : ''} (${count} cues)`;
+            return `<option value="${id}">${escapeHtml(text)}</option>`;
+          }).join('');
+
+        // Default to the list with the most cues — almost always the main
+        // show sequence versus follow-spot/utility lists.
+        let bestId = null, bestCount = -1;
+        for (const id of listIds) {
+          const count = parsedData.cuesByList.has(id) ? parsedData.cuesByList.get(id).size : 0;
+          if (count > bestCount) { bestCount = count; bestId = id; }
+        }
+        if (bestId !== null) select.value = bestId;
+
+        document.getElementById('settingsRow').style.display = '';
+        statusEl.innerText =
+          `Parsed ${listIds.size} cue list(s), ${parsedData.presets.size} presets defined, ` +
+          `${parsedData.channels.size} patched channels.`;
+
+        renderFixtureTypePanel();
+        renderPresetPanel();
+      }, 30);
+    }
+
+    /* ============================================================
+       Fixture Type filter — lets the user exclude whole fixture
+       types (pixel-mapping fixtures, LED strips, etc.) from counting
+       toward "used presets" and the cue list.
+       ============================================================ */
+    let fixtureTypeFlags = new Map(); // fixtureType -> boolean (checked state); absent = default checked
+
+    function renderFixtureTypePanel() {
+      const counts = new Map(); // fixtureType -> channel count
+      for (const info of parsedData.channels.values()) {
+        const t = info.fixtureType || '(unlabeled)';
+        counts.set(t, (counts.get(t) || 0) + 1);
+      }
+      const types = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+      document.getElementById('fixtureTypeList').innerHTML = types.map(([type, count]) => {
+        const domId = 'ft_' + type.replace(/[^A-Za-z0-9]/g, '_');
+        const checked = fixtureTypeFlags.has(type) ? fixtureTypeFlags.get(type) : true;
+        return `
+        <div class="form-check border-bottom py-1 fixture-type-item">
+          <input class="form-check-input" type="checkbox" id="${domId}" data-fixture-type="${escapeHtml(type)}" ${checked ? 'checked' : ''}
+            onchange="fixtureTypeFlags.set(this.dataset.fixtureType, this.checked)">
+          <label class="form-check-label" for="${domId}">${escapeHtml(type)}
+            <span class="text-muted">(${count} ch)</span></label>
+        </div>`;
+      }).join('');
+
+      document.getElementById('fixtureTypePanel').style.display = '';
+    }
+
+    function setAllFixtureTypeChecks(checked) {
+      document.querySelectorAll('#fixtureTypeList input[type=checkbox]').forEach(cb => {
+        cb.checked = checked;
+        fixtureTypeFlags.set(cb.dataset.fixtureType, checked);
+      });
+    }
+
+    // null = "no filter, include every fixture type" (panel not rendered yet)
+    function selectedFixtureTypes() {
+      const boxes = document.querySelectorAll('#fixtureTypeList input[type=checkbox]');
+      if (!boxes.length) return null;
+      return new Set([...boxes].filter(cb => cb.checked).map(cb => cb.dataset.fixtureType));
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    /* ============================================================
+       Special Focus flags — persisted across the checklist and
+       import/export so work can be saved and resumed. Which presets
+       are "Special Focus" is a purely human judgment call; nothing in
+       the console export marks that, so this is entirely user-driven.
+       ============================================================ */
+    let flagsMap = new Map(); // presetId -> boolean
+
+    function importFlagsCsv(text) {
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      const lines = text.split(/\r\n|\r|\n/).filter(l => l !== '');
+      if (!lines.length) return;
+      const header = parseCsvLine(lines[0]).map(h => h.trim());
+
+      const rowTypeIdx = header.indexOf('ROW_TYPE');
+      const keyIdx = header.indexOf('KEY');
+      const enabledIdx = header.indexOf('ENABLED');
+      const oldIdIdx = header.indexOf('PRESET_ID');
+      const oldFlagIdx = header.indexOf('SPECIAL_FOCUS');
+
+      if (rowTypeIdx !== -1 && keyIdx !== -1 && enabledIdx !== -1) {
+        // Current format: presets AND fixture type filter selections together.
+        for (let i = 1; i < lines.length; i++) {
+          const cols = parseCsvLine(lines[i]);
+          const key = (cols[keyIdx] || '').trim();
+          if (!key) continue;
+          const enabled = (cols[enabledIdx] || '').trim().toUpperCase() === 'TRUE';
+          const rowType = (cols[rowTypeIdx] || '').trim();
+          if (rowType === 'PRESET') flagsMap.set(key, enabled);
+          else if (rowType === 'FIXTURE_TYPE') fixtureTypeFlags.set(key, enabled);
+        }
+      } else if (oldIdIdx !== -1 && oldFlagIdx !== -1) {
+        // Older export format: presets only.
+        for (let i = 1; i < lines.length; i++) {
+          const cols = parseCsvLine(lines[i]);
+          const id = (cols[oldIdIdx] || '').trim();
+          if (!id) continue;
+          flagsMap.set(id, (cols[oldFlagIdx] || '').trim().toUpperCase() === 'TRUE');
+        }
+      } else {
+        alert('That doesn\'t look like a Special Focus Flags CSV exported from this tool.');
+        return;
+      }
+
+      if (document.getElementById('fixtureTypePanel').style.display !== 'none') {
+        renderFixtureTypePanel();
+      }
+      if (document.getElementById('presetPanel').style.display !== 'none') {
+        renderPresetPanel();
+      }
+    }
+
+    /* ============================================================
+       Cue-list tracking
+       ============================================================
+       Eos only writes a LEVELS row for a channel/parameter when it
+       changes; the value then holds ("tracks") through every later
+       cue until something changes it again. To know what preset a
+       channel is actually running — and whether its intensity is
+       actually above the "on" floor — at any given cue, we have to
+       replay the cue list in order, cue by cue, carrying each
+       channel's last-set intensity and last-set preset forward.
+       A cue flagged BLOCK in Eos stops all tracking into it — every
+       channel's state resets before that cue's own rows are applied.
+       ============================================================ */
+    // A channel's fixture type, for the Fixture Type filter. Channels with
+    // no CHANNELS-section entry (shouldn't normally happen) are grouped
+    // under '(unpatched)' rather than silently always included/excluded.
+    function channelFixtureType(channel) {
+      const c = parsedData.channels.get(channel);
+      return c ? (c.fixtureType || '(unlabeled)') : '(unpatched)';
+    }
+
+    function computeTracked(listNum, threshold, allowedTypes) {
+      const cueMap = parsedData.cuesByList.get(listNum) || new Map();
+      const cues = [...cueMap.values()].sort((a, b) => parseFloat(a.id) - parseFloat(b.id));
+
+      const typeOk = (channel) => !allowedTypes || allowedTypes.has(channelFixtureType(channel));
+
+      const intensByCue = new Map();
+      for (const row of parsedData.intensRows) {
+        if (row.listNum !== listNum) continue;
+        if (!typeOk(row.channel)) continue;
+        if (!intensByCue.has(row.cueId)) intensByCue.set(row.cueId, []);
+        intensByCue.get(row.cueId).push(row);
+      }
+      const presetRefByCue = new Map();
+      for (const row of parsedData.presetRefRows) {
+        if (row.listNum !== listNum) continue;
+        if (!typeOk(row.channel)) continue;
+        if (!presetRefByCue.has(row.cueId)) presetRefByCue.set(row.cueId, []);
+        presetRefByCue.get(row.cueId).push(row);
+      }
+
+      const runningIntens = new Map(); // channel -> level
+      const runningPreset = new Map(); // channel -> presetId
+      const runningPart = new Map();   // channel -> the TARGET_PART_NUMBER of the row that last set runningPreset
+
+      const perCueActive = new Map();  // cueId -> Map(channel -> {presetId, part})  (only entries >= threshold)
+      const perCueChanged = new Map(); // cueId -> Set(channel) — channels whose preset assignment is newly in effect as of this cue
+      const usage = new Map();         // presetId -> {channels:Set, cues:Set}
+
+      // Once a (channel, preset) pair has appeared, it's done — the
+      // fixture gets focused for that preset once and isn't touched
+      // again. So this never resets (not even on a BLOCK cue, which is
+      // a console tracking concept, not a "you have to refocus" one) —
+      // a channel/preset pair is flagged "new" exactly once, on its
+      // first-ever appearance in the list, however many more times it
+      // recurs later (same preset, blackout-and-back, re-recorded, etc).
+      const everShown = new Set(); // "channel|presetId"
+
+      for (const cue of cues) {
+        if (cue.block) {
+          runningIntens.clear();
+          runningPreset.clear();
+          runningPart.clear();
+        }
+        for (const r of (intensByCue.get(cue.id) || [])) runningIntens.set(r.channel, r.level);
+        for (const r of (presetRefByCue.get(cue.id) || [])) {
+          runningPreset.set(r.channel, r.presetId);
+          runningPart.set(r.channel, r.part);
+        }
+
+        const active = new Map();
+        const changed = new Set();
+        for (const [channel, presetId] of runningPreset.entries()) {
+          const lvl = runningIntens.get(channel);
+          if (lvl !== undefined && lvl >= threshold) {
+            const part = runningPart.get(channel) || '';
+            active.set(channel, { presetId, part });
+            const key = channel + '|' + presetId;
+            if (!everShown.has(key)) {
+              changed.add(channel);
+              everShown.add(key);
+            }
+            if (!usage.has(presetId)) usage.set(presetId, { channels: new Set(), cues: new Set() });
+            const u = usage.get(presetId);
+            u.channels.add(channel);
+            u.cues.add(cue.id);
+          }
+        }
+        perCueActive.set(cue.id, active);
+        perCueChanged.set(cue.id, changed);
+      }
+
+      return { cues, perCueActive, perCueChanged, usage };
+    }
+
+    function currentThreshold() {
+      const minI = parseFloat(document.getElementById('minIntensity').value);
+      return isNaN(minI) ? 0 : minI;
+    }
+
+    /* ============================================================
+       Panel 2: used-preset computation + checklist rendering
+       ============================================================ */
+    let usedPresetsCache = [];
+
+    function computeUsedPresets() {
+      const listNum = document.getElementById('cueListSelect').value;
+      const threshold = currentThreshold();
+      const { usage } = computeTracked(listNum, threshold, selectedFixtureTypes());
+
+      return [...usage.entries()]
+        .map(([id, u]) => ({
+          id,
+          label: parsedData.presets.get(id) || ('Preset ' + id),
+          channelCount: u.channels.size,
+          cueCount: u.cues.size,
+        }))
+        .sort((a, b) => parseFloat(a.id) - parseFloat(b.id));
+    }
+
+    function renderPresetPanel() {
+      if (!parsedData) return;
+      usedPresetsCache = computeUsedPresets();
+
+      const listSelect = document.getElementById('cueListSelect');
+      const listLabel = listSelect.options[listSelect.selectedIndex]
+        ? listSelect.options[listSelect.selectedIndex].text : '';
+      document.getElementById('presetSubtitle').innerText =
+        `Found ${usedPresetsCache.length} preset(s) used in cuelist "${listLabel}". Presets defined but ` +
+        `never used at or above minimum on intensity are omitted. Check the ones that are Special Focus, ` +
+        `then click Generate Cue List.`;
+
+      const container = document.getElementById('presetList');
+      if (!usedPresetsCache.length) {
+        container.innerHTML = '<span class="text-muted small py-3 d-block">No presets found above that intensity threshold in this cue list.</span>';
+      } else {
+        container.innerHTML = usedPresetsCache.map(p => {
+          const checked = flagsMap.get(p.id) === true;
+          const search = (p.id + ' ' + p.label).toLowerCase();
+          return `
+          <div class="form-check border-bottom py-2 preset-item" data-search="${escapeHtml(search)}">
+            <input class="form-check-input" type="checkbox" id="pf_${escapeHtml(p.id)}"
+              data-preset-id="${escapeHtml(p.id)}" ${checked ? 'checked' : ''}
+              onchange="flagsMap.set('${escapeHtml(p.id)}', this.checked)">
+            <label class="form-check-label w-100" for="pf_${escapeHtml(p.id)}">
+              <span class="fw-bold">#${escapeHtml(p.id)}</span> — ${escapeHtml(p.label)}
+              <span class="text-muted">(${p.channelCount} ch / ${p.cueCount} cue${p.cueCount === 1 ? '' : 's'})</span>
+            </label>
+          </div>`;
+        }).join('');
+      }
+
+      document.getElementById('presetSearch').value = '';
+      document.getElementById('presetPanel').style.display = '';
+      document.getElementById('presetPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function filterPresetList() {
+      const q = document.getElementById('presetSearch').value.trim().toLowerCase();
+      document.querySelectorAll('#presetList .preset-item').forEach(el => {
+        el.style.display = (!q || el.dataset.search.includes(q)) ? '' : 'none';
+      });
+    }
+
+    function setAllPresetChecks(checked) {
+      document.querySelectorAll('#presetList .preset-item').forEach(el => {
+        if (el.style.display === 'none') return;
+        const cb = el.querySelector('input[type=checkbox]');
+        cb.checked = checked;
+        flagsMap.set(cb.dataset.presetId, checked);
+      });
+    }
+
+    function exportFlagsCsv() {
+      if (!parsedData) return;
+      const rows = [['ROW_TYPE', 'KEY', 'LABEL', 'ENABLED']];
+      // Export every preset defined in the show (not just currently-used
+      // ones) so flags survive threshold/cue-list changes on re-import.
+      for (const [id, label] of parsedData.presets.entries()) {
+        rows.push(['PRESET', id, label, flagsMap.get(id) === true ? 'TRUE' : 'FALSE']);
+      }
+      // Fixture type filter selections, read live from the checklist when
+      // it's been rendered (authoritative), else from any imported state.
+      const ftBoxes = document.querySelectorAll('#fixtureTypeList input[type=checkbox]');
+      if (ftBoxes.length) {
+        ftBoxes.forEach(cb => {
+          const type = cb.dataset.fixtureType;
+          rows.push(['FIXTURE_TYPE', type, type, cb.checked ? 'TRUE' : 'FALSE']);
+        });
+      } else {
+        for (const [type, enabled] of fixtureTypeFlags.entries()) {
+          rows.push(['FIXTURE_TYPE', type, type, enabled ? 'TRUE' : 'FALSE']);
+        }
+      }
+      const csv = rows.map(r => r.map(toCsvField).join(',')).join('\r\n');
+      downloadText('special-focus-flags.csv', csv);
+    }
+
+    /* ============================================================
+       Panel 3: cue list assembly + rendering
+       ============================================================ */
+    function compressRanges(nums) {
+      const sorted = [...new Set(nums.map(Number))].filter(n => !isNaN(n)).sort((a, b) => a - b);
+      if (!sorted.length) return '';
+      const ranges = [];
+      let start = sorted[0], prev = sorted[0];
+      for (let i = 1; i <= sorted.length; i++) {
+        const n = sorted[i];
+        if (n === prev + 1) { prev = n; continue; }
+        ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+        if (i < sorted.length) { start = n; prev = n; }
+      }
+      return ranges.join(', ');
+    }
+
+    // Returns escaped HTML (not plain text) — the channel numbers are
+    // wrapped to stand out, and every distinct fixture label among the
+    // channels is listed (not just when they all match).
+    function describeChannels(channelIds) {
+      const labels = [...new Set(
+        channelIds.map(ch => (parsedData.channels.get(ch) || {}).label).filter(Boolean)
+      )].sort();
+      const rangeHtml = `<span class="ch-num">${escapeHtml(compressRanges(channelIds))}</span>`;
+      if (!labels.length) return rangeHtml;
+      return `${rangeHtml} (${escapeHtml(labels.join(', '))})`;
+    }
+
+    let cueListDataCache = [];
+
+    function buildCueListData() {
+      const listNum = document.getElementById('cueListSelect').value;
+      const threshold = currentThreshold();
+      const firstUseOnly = document.getElementById('firstUseOnly').checked;
+      const specialFocus = new Set(
+        [...document.querySelectorAll('#presetList input:checked')].map(cb => cb.dataset.presetId)
+      );
+
+      const { cues, perCueActive, perCueChanged } = computeTracked(listNum, threshold, selectedFixtureTypes());
+
+      return cues.map(cue => {
+        const partsSorted = [...cue.parts].sort((a, b) => {
+          const pa = a.part === '' ? -1 : parseFloat(a.part);
+          const pb = b.part === '' ? -1 : parseFloat(b.part);
+          return pa - pb;
+        });
+
+        // Group this cue's currently-active, flagged channels by preset AND
+        // by the part they were actually recorded under (which may not be
+        // any part listed on THIS cue — the value can be tracked forward
+        // from an earlier cue's part). With "first used" on, drop a channel
+        // unless this cue is where it turned on or switched presets.
+        const changed = perCueChanged.get(cue.id) || new Set();
+        const byPreset = new Map(); // "presetId|part" -> {presetId, part, channels:Set}
+        for (const [channel, { presetId, part }] of (perCueActive.get(cue.id) || new Map())) {
+          if (!specialFocus.has(presetId)) continue;
+          if (firstUseOnly && !changed.has(channel)) continue;
+          const key = presetId + '|' + part;
+          if (!byPreset.has(key)) byPreset.set(key, { presetId, part, channels: new Set() });
+          byPreset.get(key).channels.add(channel);
+        }
+        const presets = [...byPreset.values()]
+          .map(({ presetId, part, channels }) => ({
+            id: presetId,
+            part,
+            label: parsedData.presets.get(presetId) || ('Preset ' + presetId),
+            channels: [...channels],
+          }))
+          .sort((a, b) => {
+            const byId = parseFloat(a.id) - parseFloat(b.id);
+            if (byId !== 0) return byId;
+            const pa = a.part === '' ? -1 : parseFloat(a.part);
+            const pb = b.part === '' ? -1 : parseFloat(b.part);
+            return pa - pb;
+          });
+
+        return { ...cue, parts: partsSorted, presets };
+      });
+    }
+
+    function generateCueList() {
+      cueListDataCache = buildCueListData();
+      const listSelect = document.getElementById('cueListSelect');
+      const listLabel = listSelect.options[listSelect.selectedIndex]
+        ? listSelect.options[listSelect.selectedIndex].text : '';
+      document.getElementById('resultSubtitle').innerText = `Cue List: ${listLabel}`;
+      renderCueList();
+      document.getElementById('resultPanel').style.display = '';
+      document.getElementById('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Re-run when a toggle that affects the underlying data (not just
+    // display-level filtering) changes, without re-scrolling the page.
+    function refreshCueList() {
+      if (document.getElementById('resultPanel').style.display === 'none') return;
+      cueListDataCache = buildCueListData();
+      renderCueList();
+    }
+
+    function renderCueList() {
+      const onlyWithData = document.getElementById('onlyWithData').checked;
+      const out = document.getElementById('cueListOutput');
+
+      const blocks = cueListDataCache.map(cue => {
+        if (onlyWithData && cue.presets.length === 0) return '';
+
+        const mainPart = cue.parts.find(p => p.part === '') || { label: '', notes: '' };
+        const namedParts = cue.parts.filter(p => p.part !== '');
+
+        const tagHtml = (pr, showPart) => `
+          <span class="preset-tag"><strong>${escapeHtml(pr.label)}</strong> (Preset #${escapeHtml(pr.id)}${showPart && pr.part ? ', Part ' + escapeHtml(pr.part) : ''}):
+            ${describeChannels(pr.channels)}</span>`;
+
+        // Group tags by the part they were actually recorded under, so each
+        // sits directly beneath that part's own "Part N — Label" line.
+        const presetsByPart = new Map(); // part -> preset entries
+        for (const pr of cue.presets) {
+          if (!presetsByPart.has(pr.part)) presetsByPart.set(pr.part, []);
+          presetsByPart.get(pr.part).push(pr);
+        }
+        const groupHtml = (part) => {
+          const list = presetsByPart.get(part);
+          if (!list || !list.length) return '';
+          presetsByPart.delete(part);
+          return `<div class="mt-1">${list.map(pr => tagHtml(pr, false)).join('')}</div>`;
+        };
+
+        const mainGroupHtml = groupHtml('');
+
+        const partsHtml = namedParts.map(p => `
+            <div class="part-block">
+              <span class="fw-bold small">Part ${escapeHtml(p.part)}</span>
+              ${p.label ? ' — ' + escapeHtml(p.label) : ''}
+              ${groupHtml(p.part)}
+            </div>`).join('');
+
+        // Whatever's left was recorded under a part this cue doesn't itself
+        // list — the value tracked forward from an earlier cue's part.
+        // Still show it, just self-labeled since there's no heading to sit under.
+        const leftoverHtml = [...presetsByPart.entries()].map(([part, list]) => `
+            <div class="part-block">
+              <span class="fw-bold small text-muted">Part ${escapeHtml(part)} <span class="fst-italic">(from an earlier cue)</span></span>
+              <div class="mt-1">${list.map(pr => tagHtml(pr, false)).join('')}</div>
+            </div>`).join('');
+
+        return `
+          <div class="cue-block border-bottom">
+            <div>
+              <span class="fw-bold fs-6">Q ${escapeHtml(cue.id)}</span>
+              ${mainPart.label ? ' — ' + escapeHtml(mainPart.label) : ''}
+              ${cue.block ? '<span class="badge bg-dark ms-1">Block</span>' : ''}
+            </div>
+            ${mainPart.notes ? `<div class="text-muted fst-italic" style="font-size:0.78rem;">${escapeHtml(mainPart.notes)}</div>` : ''}
+            ${mainGroupHtml}
+            ${partsHtml}
+            ${leftoverHtml}
+            ${cue.presets.length === 0 ? '<span class="text-muted">No Special Focus lights on.</span>' : ''}
+          </div>`;
+      }).join('');
+
+      out.innerHTML = blocks || '<span class="text-muted small">No cues match the current filters.</span>';
+    }
+
+    function exportCueListCsv() {
+      if (!cueListDataCache.length) return;
+      const listSelect = document.getElementById('cueListSelect');
+      const listLabel = listSelect.options[listSelect.selectedIndex]
+        ? listSelect.options[listSelect.selectedIndex].text : '';
+
+      const rows = [['CUE_LIST', 'CUE_NUMBER', 'CUE_LABEL', 'CUE_PART', 'PRESET_NUMBER', 'PRESET_LABEL', 'CHANNEL_COUNT', 'CHANNELS', 'CHANNEL_LABELS']];
+      for (const cue of cueListDataCache) {
+        const mainPart = cue.parts.find(p => p.part === '') || { label: '' };
+        for (const preset of cue.presets) {
+          const channelLabels = [...new Set(
+            preset.channels.map(ch => (parsedData.channels.get(ch) || {}).label).filter(Boolean)
+          )].sort().join(', ');
+          rows.push([
+            listLabel,
+            cue.id,
+            mainPart.label,
+            preset.part,
+            preset.id,
+            preset.label,
+            preset.channels.length,
+            compressRanges(preset.channels),
+            channelLabels,
+          ]);
+        }
+      }
+      const csv = rows.map(r => r.map(toCsvField).join(',')).join('\r\n');
+      downloadText('special-focus-cuelist.csv', csv);
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+</body>
+
+</html>
