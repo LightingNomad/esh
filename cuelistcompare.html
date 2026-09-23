@@ -21,7 +21,6 @@
     background: #fff;
     cursor: pointer;
     transition: 0.2s;
-    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -74,14 +73,18 @@
         </div>
 
         <div class="row justify-content-center g-3">
-          <div class="col-12 col-md-4">
-            <div id="dropEos" class="drop-zone">
+          <div class="col-12 col-md-4 d-flex flex-column">
+            <div id="dropEos" class="drop-zone flex-grow-1">
               <span class="fw-bold">EOS CSV</span><br>
               <span id="infoEos" class="text-muted small">Drop here or click</span>
             </div>
+            <div id="eosListWrapper" class="mt-2" hidden>
+              <label for="eosListSelect" class="form-label small text-muted mb-1">Cue List</label>
+              <select id="eosListSelect" class="form-select form-select-sm"></select>
+            </div>
           </div>
-          <div class="col-12 col-md-4">
-            <div id="dropCuelist" class="drop-zone">
+          <div class="col-12 col-md-4 d-flex flex-column">
+            <div id="dropCuelist" class="drop-zone flex-grow-1">
               <span class="fw-bold">Cuelist CSV</span><br>
               <span id="infoCuelist" class="text-muted small">Drop here or click</span>
             </div>
@@ -156,8 +159,60 @@
       if (!file) return;
       infoEl.innerText = file.name;
       const reader = new FileReader();
-      reader.onload = (e) => filesData[key] = e.target.result;
+      reader.onload = (e) => {
+        filesData[key] = e.target.result;
+        if (key === 'eos') populateEosListSelect(e.target.result);
+      };
       reader.readAsText(file);
+    }
+
+    function stripEosMarkers(text) {
+      return text.split(/\r?\n/)
+        .filter(l => !l.includes('START_TARGETS') && !l.includes('END_TARGETS')).join('\n');
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function populateEosListSelect(text) {
+      const wrapper = document.getElementById('eosListWrapper');
+      const select = document.getElementById('eosListSelect');
+      const items = parseCSV(stripEosMarkers(text));
+
+      const hasListColumn = items.length > 0 && ('TARGET_LIST_NUMBER' in items[0]);
+      if (!hasListColumn) {
+        wrapper.hidden = true;
+        select.innerHTML = '';
+        return;
+      }
+
+      const listNumbers = [...new Set(
+        items
+          .filter(r => r['TARGET_TYPE_AS_TEXT'] === 'Cue' && r['TARGET_LIST_NUMBER'])
+          .map(r => r['TARGET_LIST_NUMBER'])
+      )].sort((a, b) => parseFloat(a) - parseFloat(b));
+
+      if (!listNumbers.length) {
+        wrapper.hidden = true;
+        select.innerHTML = '';
+        return;
+      }
+
+      const listLabels = new Map();
+      items
+        .filter(r => r['TARGET_TYPE_AS_TEXT'] === 'Cue_List')
+        .forEach(r => listLabels.set(r['TARGET_ID'], r['LABEL']));
+
+      select.innerHTML = listNumbers.map(n => {
+        const label = listLabels.get(n);
+        const text = label ? `Cue List ${n} — ${label}` : `Cue List ${n}`;
+        return `<option value="${n}">${escapeHtml(text)}</option>`;
+      }).join('');
+      select.value = listNumbers.includes('1') ? '1' : listNumbers[0];
+      wrapper.hidden = false;
     }
 
     function toggleStrike(checkbox) {
@@ -190,12 +245,13 @@
         if (q) clMap.set(q, { label: r['Label'] || "Untitled", page: r['Page Number'] || "?" });
       });
 
-      const eosLines = filesData.eos.split(/\r?\n/)
-        .filter(l => !l.includes('START_TARGETS') && !l.includes('END_TARGETS')).join('\n');
-      const eosItems = parseCSV(eosLines);
+      const eosItems = parseCSV(stripEosMarkers(filesData.eos));
+      const eosListWrapper = document.getElementById('eosListWrapper');
+      const selectedList = (!eosListWrapper.hidden) ? document.getElementById('eosListSelect').value : null;
       const eosMap = new Map();
       eosItems.forEach(r => {
         if (r['TARGET_TYPE_AS_TEXT'] === 'Cue' && (!r['PART_NUMBER'] || r['PART_NUMBER'] === "")) {
+          if (selectedList && r['TARGET_LIST_NUMBER'] !== selectedList) return;
           if (r['TARGET_ID']) eosMap.set(r['TARGET_ID'], { label: r['LABEL'] || "" });
         }
       });
